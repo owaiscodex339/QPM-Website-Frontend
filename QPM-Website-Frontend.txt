@@ -1,0 +1,4542 @@
+================================================================================
+START OF FOLDER: QPM-Website-Frontend
+================================================================================
+
+================================================================================
+PROJECT STRUCTURE
+================================================================================
+Root: D:\QuantumLogics\QPM-Website-Frontend
+
+QPM-Website-Frontend/
+├── .git/  [skipped]
+├── node_modules/  [skipped]
+├── src/
+│   ├── components/
+│   │   ├── AuthModal.jsx
+│   │   ├── Footer.jsx
+│   │   ├── Navbar.jsx
+│   │   └── PackageCard.jsx
+│   ├── context/
+│   │   └── AuthContext.jsx
+│   ├── pages/
+│   │   ├── Explore.jsx
+│   │   ├── Home.jsx
+│   │   ├── PackageDetails.jsx
+│   │   ├── Profile.jsx
+│   │   └── Publish.jsx
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
+├── .gitignore
+├── index.html
+├── package-lock.json
+├── package.json
+├── README.md
+└── vite.config.js
+
+Total files: 19
+
+================================================================================
+FILE CONTENTS
+================================================================================
+
+--------------------------------------------------------------------------------
+FILE: /src/components/AuthModal.jsx
+--------------------------------------------------------------------------------
+import React, { useState } from "react";
+import { X, Lock, Mail, User, ArrowRight, ShieldCheck } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+
+export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
+  const [mode, setMode] = useState(initialMode);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [bio, setBio] = useState("");
+  
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  const { login, signup } = useAuth();
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (mode === "login") {
+        await login(email || username, password);
+      } else {
+        await signup(username, email, password, bio);
+      }
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={styles.overlay} onClick={onClose}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        {/* Close Button */}
+        <button style={styles.closeBtn} onClick={onClose}>
+          <X size={20} />
+        </button>
+
+        {/* Modal Header */}
+        <div style={styles.header}>
+          <div style={styles.iconCircle}>
+            <ShieldCheck size={28} color="var(--primary)" />
+          </div>
+          <h2 style={{ fontSize: "1.5rem", marginTop: "10px" }}>
+            {mode === "login" ? "Welcome Back to QPM" : "Create your QPM Account"}
+          </h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+            {mode === "login"
+              ? "Access your published packages and API tokens"
+              : "Start publishing packages stored safely in Google Drive"}
+          </p>
+        </div>
+
+        {/* Error Alert */}
+        {error && <div style={styles.errorAlert}>{error}</div>}
+
+        {/* Auth Form */}
+        <form onSubmit={handleSubmit} style={styles.form}>
+          {mode === "signup" && (
+            <div>
+              <label style={styles.label}>Username</label>
+              <div style={styles.inputWrapper}>
+                <User size={18} style={styles.inputIcon} />
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. quantumdev"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="input-field"
+                  style={{ paddingLeft: "42px" }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label style={styles.label}>
+              {mode === "login" ? "Email or Username" : "Email Address"}
+            </label>
+            <div style={styles.inputWrapper}>
+              <Mail size={18} style={styles.inputIcon} />
+              <input
+                type={mode === "login" ? "text" : "email"}
+                required
+                placeholder={mode === "login" ? "username or email@domain.com" : "you@domain.com"}
+                value={mode === "login" ? (email || username) : email}
+                onChange={(e) => {
+                  if (mode === "login") {
+                    setEmail(e.target.value);
+                    setUsername(e.target.value);
+                  } else {
+                    setEmail(e.target.value);
+                  }
+                }}
+                className="input-field"
+                style={{ paddingLeft: "42px" }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={styles.label}>Password</label>
+            <div style={styles.inputWrapper}>
+              <Lock size={18} style={styles.inputIcon} />
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-field"
+                style={{ paddingLeft: "42px" }}
+              />
+            </div>
+          </div>
+
+          {mode === "signup" && (
+            <div>
+              <label style={styles.label}>Bio / Short Description (Optional)</label>
+              <input
+                type="text"
+                placeholder="Quantum language contributor & developer"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-primary"
+            style={{ width: "100%", marginTop: "12px", height: "46px" }}
+          >
+            {loading ? (
+              "Processing..."
+            ) : (
+              <>
+                <span>{mode === "login" ? "Sign In" : "Create Account"}</span>
+                <ArrowRight size={18} />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Switch Mode Footer */}
+        <div style={styles.switchFooter}>
+          {mode === "login" ? (
+            <p>
+              Don't have an account?{" "}
+              <button
+                type="button"
+                style={styles.switchBtn}
+                onClick={() => {
+                  setMode("signup");
+                  setError("");
+                }}
+              >
+                Sign up
+              </button>
+            </p>
+          ) : (
+            <p>
+              Already have an account?{" "}
+              <button
+                type="button"
+                style={styles.switchBtn}
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                }}
+              >
+                Log in
+              </button>
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(5, 8, 15, 0.85)",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2000,
+    padding: "20px"
+  },
+  modal: {
+    background: "var(--bg-card)",
+    border: "1px solid var(--border-light)",
+    borderRadius: "var(--radius-lg)",
+    width: "100%",
+    maxWidth: "440px",
+    padding: "32px",
+    position: "relative",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)"
+  },
+  closeBtn: {
+    position: "absolute",
+    top: "16px",
+    right: "16px",
+    background: "transparent",
+    border: "none",
+    color: "var(--text-muted)",
+    cursor: "pointer",
+    padding: "6px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  header: {
+    textAlign: "center",
+    marginBottom: "24px"
+  },
+  iconCircle: {
+    width: "56px",
+    height: "56px",
+    borderRadius: "50%",
+    background: "rgba(99, 102, 241, 0.12)",
+    border: "1px solid rgba(99, 102, 241, 0.3)",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: "8px"
+  },
+  errorAlert: {
+    background: "rgba(239, 68, 68, 0.12)",
+    border: "1px solid rgba(239, 68, 68, 0.3)",
+    color: "#fca5a5",
+    padding: "10px 14px",
+    borderRadius: "var(--radius-md)",
+    fontSize: "0.85rem",
+    marginBottom: "16px",
+    textAlign: "center"
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px"
+  },
+  label: {
+    display: "block",
+    fontSize: "0.85rem",
+    fontWeight: "600",
+    color: "var(--text-muted)",
+    marginBottom: "6px"
+  },
+  inputWrapper: {
+    position: "relative"
+  },
+  inputIcon: {
+    position: "absolute",
+    left: "14px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "var(--text-muted)",
+    pointerEvents: "none"
+  },
+  switchFooter: {
+    textAlign: "center",
+    marginTop: "20px",
+    fontSize: "0.9rem",
+    color: "var(--text-muted)",
+    borderTop: "1px solid var(--border-light)",
+    paddingTop: "16px"
+  },
+  switchBtn: {
+    background: "none",
+    border: "none",
+    color: "var(--accent-cyan)",
+    fontWeight: "700",
+    cursor: "pointer"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/components/Footer.jsx
+--------------------------------------------------------------------------------
+import React from "react";
+import { Box, HardDrive, Database, ShieldCheck, Heart } from "lucide-react";
+
+export default function Footer() {
+  return (
+    <footer style={styles.footer}>
+      <div className="container" style={styles.container}>
+        <div style={styles.brandCol}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={styles.iconCircle}>
+              <Box size={20} color="#fff" />
+            </div>
+            <span style={{ fontSize: "1.2rem", fontWeight: "800", fontFamily: "var(--font-heading)" }}>
+              QPM Registry
+            </span>
+          </div>
+          <p style={styles.desc}>
+            The high-performance package manager and web registry for the Quantum Language ecosystem. Powered by Express, MongoDB, & Google Drive Storage.
+          </p>
+        </div>
+
+        <div style={styles.badgeGroup}>
+          <div style={styles.statusBadge}>
+            <Database size={16} color="var(--accent-emerald)" />
+            <span>MongoDB Database Connected</span>
+          </div>
+          <div style={styles.statusBadge}>
+            <HardDrive size={16} color="var(--accent-cyan)" />
+            <span>Google Drive API Enabled</span>
+          </div>
+          <div style={styles.statusBadge}>
+            <ShieldCheck size={16} color="var(--accent-purple)" />
+            <span>JWT Security active</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={styles.copyright}>
+        <p>© 2026 QPM Ecosystem. Built with passion for Quantum Language.</p>
+      </div>
+    </footer>
+  );
+}
+
+const styles = {
+  footer: {
+    background: "rgba(5, 8, 15, 0.95)",
+    borderTop: "1px solid var(--border-light)",
+    padding: "48px 0 24px",
+    marginTop: "80px"
+  },
+  container: {
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "32px",
+    paddingBottom: "32px",
+    borderBottom: "1px solid var(--border-light)"
+  },
+  brandCol: {
+    maxWidth: "480px"
+  },
+  iconCircle: {
+    width: "32px",
+    height: "32px",
+    borderRadius: "8px",
+    background: "linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  desc: {
+    color: "var(--text-muted)",
+    fontSize: "0.9rem",
+    marginTop: "12px"
+  },
+  badgeGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px"
+  },
+  statusBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "8px 14px",
+    borderRadius: "var(--radius-md)",
+    background: "rgba(255, 255, 255, 0.03)",
+    border: "1px solid var(--border-light)",
+    fontSize: "0.85rem",
+    color: "var(--text-muted)"
+  },
+  copyright: {
+    textAlign: "center",
+    color: "var(--text-dim)",
+    fontSize: "0.85rem",
+    paddingTop: "24px"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/components/Navbar.jsx
+--------------------------------------------------------------------------------
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, Package, Upload, User, LogOut, Box, Terminal, Sparkles } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import AuthModal from "./AuthModal";
+
+export default function Navbar() {
+  const { user, logout } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const openAuth = (mode) => {
+    setAuthMode(mode);
+    setIsAuthOpen(true);
+  };
+
+  return (
+    <>
+      <nav style={styles.nav}>
+        <div className="container" style={styles.navContainer}>
+          {/* Logo */}
+          <Link to="/" style={styles.logo}>
+            <div style={styles.logoIcon}>
+              <Box size={22} color="#fff" />
+            </div>
+            <div>
+              <span style={styles.logoText}>QPM</span>
+              <span style={styles.logoSubtext}>Registry</span>
+            </div>
+          </Link>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearchSubmit} style={styles.searchForm}>
+            <Search size={18} style={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Search QPM packages (e.g., react, express, utils)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-field"
+              style={styles.searchInput}
+            />
+          </form>
+
+          {/* Nav Links */}
+          <div style={styles.navActions}>
+            <Link to="/explore" style={styles.navLink}>
+              <Package size={18} />
+              <span>Explore</span>
+            </Link>
+
+            <Link to="/publish" style={styles.navLink}>
+              <Upload size={18} />
+              <span>Publish</span>
+            </Link>
+
+            {user ? (
+              <div style={styles.userMenu}>
+                <Link to="/profile" style={styles.profileBtn}>
+                  <div style={styles.avatar}>
+                    {user.username.substring(0, 2).toUpperCase()}
+                  </div>
+                  <span style={styles.username}>@{user.username}</span>
+                </Link>
+
+                <button onClick={logout} className="btn btn-secondary btn-sm" title="Log out">
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button onClick={() => openAuth("login")} className="btn btn-secondary btn-sm">
+                  Log In
+                </button>
+                <button onClick={() => openAuth("signup")} className="btn btn-primary btn-sm">
+                  Sign Up
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Auth Modal */}
+      {isAuthOpen && (
+        <AuthModal
+          isOpen={isAuthOpen}
+          initialMode={authMode}
+          onClose={() => setIsAuthOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+const styles = {
+  nav: {
+    background: "rgba(9, 13, 22, 0.85)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    borderBottom: "1px solid var(--border-light)",
+    position: "sticky",
+    top: 0,
+    zIndex: 1000,
+    padding: "12px 0"
+  },
+  navContainer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "24px"
+  },
+  logo: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    textDecoration: "none"
+  },
+  logoIcon: {
+    width: "38px",
+    height: "38px",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 0 15px var(--primary-glow)"
+  },
+  logoText: {
+    fontFamily: "var(--font-heading)",
+    fontSize: "1.3rem",
+    fontWeight: "800",
+    letterSpacing: "0.05em",
+    color: "#fff",
+    display: "block",
+    lineHeight: "1"
+  },
+  logoSubtext: {
+    fontSize: "0.7rem",
+    color: "var(--accent-cyan)",
+    fontWeight: "600",
+    letterSpacing: "0.1em",
+    textTransform: "uppercase"
+  },
+  searchForm: {
+    position: "relative",
+    flex: "1",
+    maxWidth: "520px"
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "14px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "var(--text-muted)",
+    pointerEvents: "none"
+  },
+  searchInput: {
+    paddingLeft: "42px",
+    height: "42px",
+    background: "rgba(15, 23, 42, 0.7)",
+    borderRadius: "var(--radius-full)"
+  },
+  navActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "20px"
+  },
+  navLink: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    color: "var(--text-muted)",
+    fontFamily: "var(--font-heading)",
+    fontWeight: "600",
+    fontSize: "0.95rem",
+    transition: "all var(--transition-fast)"
+  },
+  userMenu: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px"
+  },
+  profileBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "4px 10px 4px 4px",
+    borderRadius: "var(--radius-full)",
+    background: "rgba(255, 255, 255, 0.05)",
+    border: "1px solid var(--border-light)",
+    color: "var(--text-main)",
+    textDecoration: "none"
+  },
+  avatar: {
+    width: "28px",
+    height: "28px",
+    borderRadius: "50%",
+    background: "linear-gradient(135deg, var(--accent-purple) 0%, var(--primary) 100%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "0.75rem",
+    fontWeight: "700",
+    color: "#fff"
+  },
+  username: {
+    fontSize: "0.85rem",
+    fontWeight: "600"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/components/PackageCard.jsx
+--------------------------------------------------------------------------------
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Download, Tag, User, Copy, Check, HardDrive } from "lucide-react";
+
+export default function PackageCard({ pkg }) {
+  const [copied, setCopied] = useState(false);
+  const installCmd = `qpm install ${pkg.name}`;
+
+  const copyCommand = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(installCmd);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Link to={`/package/${pkg.name}`} style={{ textDecoration: "none" }}>
+      <div className="glass-card" style={styles.card}>
+        <div style={styles.cardHeader}>
+          <div>
+            <h3 style={styles.pkgName}>{pkg.name}</h3>
+            <span className="tag-badge" style={{ marginTop: "4px" }}>
+              v{pkg.latest_version || "1.0.0"}
+            </span>
+          </div>
+
+          <div style={styles.badgeDrive} title="Stored securely on Google Drive">
+            <HardDrive size={14} color="var(--accent-cyan)" />
+            <span>GDrive</span>
+          </div>
+        </div>
+
+        <p style={styles.description}>
+          {pkg.description || "No description available for this package."}
+        </p>
+
+        {pkg.keywords && pkg.keywords.length > 0 && (
+          <div style={styles.tagList}>
+            {pkg.keywords.slice(0, 3).map((kw, i) => (
+              <span key={i} className="tag-badge tag-badge-cyan">
+                #{kw}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div style={styles.cardFooter}>
+          <div style={styles.metaInfo}>
+            <span style={styles.metaItem}>
+              <Download size={14} color="var(--accent-emerald)" />
+              {pkg.downloads || 0} downloads
+            </span>
+            <span style={styles.metaItem}>
+              <User size={14} color="var(--text-dim)" />
+              @{pkg.owner || "community"}
+            </span>
+          </div>
+
+          <button onClick={copyCommand} className="btn btn-secondary btn-sm" style={styles.copyBtn}>
+            {copied ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
+            <span>{copied ? "Copied" : "Copy"}</span>
+          </button>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+const styles = {
+  card: {
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    height: "100%",
+    justifyContent: "space-between"
+  },
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start"
+  },
+  pkgName: {
+    fontSize: "1.25rem",
+    fontWeight: "700",
+    color: "#fff"
+  },
+  badgeDrive: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    padding: "4px 8px",
+    borderRadius: "var(--radius-sm)",
+    background: "rgba(6, 182, 212, 0.1)",
+    border: "1px solid rgba(6, 182, 212, 0.25)",
+    fontSize: "0.7rem",
+    fontWeight: "700",
+    color: "var(--accent-cyan)"
+  },
+  description: {
+    color: "var(--text-muted)",
+    fontSize: "0.9rem",
+    lineHeight: "1.5",
+    flex: "1"
+  },
+  tagList: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px"
+  },
+  cardFooter: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: "12px",
+    borderTop: "1px solid var(--border-light)"
+  },
+  metaInfo: {
+    display: "flex",
+    gap: "14px",
+    fontSize: "0.8rem",
+    color: "var(--text-dim)"
+  },
+  metaItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px"
+  },
+  copyBtn: {
+    borderRadius: "var(--radius-full)",
+    padding: "4px 10px"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/context/AuthContext.jsx
+--------------------------------------------------------------------------------
+import React, { createContext, useContext, useState, useEffect } from "react";
+
+const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("qpm_token") || null);
+  const [loading, setLoading] = useState(true);
+
+  // Validate token on mount
+  useEffect(() => {
+    const fetchMe = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          // Token expired or invalid
+          localStorage.removeItem("qpm_token");
+          setToken(null);
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("Auth check failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMe();
+  }, [token]);
+
+  const login = async (emailOrUsername, password) => {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emailOrUsername, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || "Login failed.");
+    }
+    localStorage.setItem("qpm_token", data.token);
+    setToken(data.token);
+    setUser(data.user);
+    return data;
+  };
+
+  const signup = async (username, email, password, bio = "") => {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password, bio })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || "Signup failed.");
+    }
+    localStorage.setItem("qpm_token", data.token);
+    setToken(data.token);
+    setUser(data.user);
+    return data;
+  };
+
+  const logout = () => {
+    localStorage.removeItem("qpm_token");
+    setToken(null);
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, token, loading, login, signup, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);
+
+
+--------------------------------------------------------------------------------
+FILE: /src/pages/Explore.jsx
+--------------------------------------------------------------------------------
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Search, Filter, Box, RefreshCw } from "lucide-react";
+import PackageCard from "../components/PackageCard";
+
+export default function Explore() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryParam = searchParams.get("q") || "";
+
+  const [searchTerm, setSearchTerm] = useState(queryParam);
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTag, setActiveTag] = useState("all");
+
+  const popularTags = ["quantum", "core", "math", "express", "react", "utils", "networking"];
+
+  const fetchPackages = async (term = "") => {
+    setLoading(true);
+    try {
+      const url = term ? `/api/registry/search?q=${encodeURIComponent(term)}` : "/api/registry/search";
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setPackages(data.objects || []);
+      }
+    } catch (err) {
+      console.error("Search failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setSearchTerm(queryParam);
+    fetchPackages(queryParam);
+  }, [queryParam]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setSearchParams(searchTerm ? { q: searchTerm } : {});
+  };
+
+  const handleTagClick = (tag) => {
+    if (tag === activeTag) {
+      setActiveTag("all");
+      setSearchParams({});
+    } else {
+      setActiveTag(tag);
+      setSearchTerm(tag);
+      setSearchParams({ q: tag });
+    }
+  };
+
+  return (
+    <div style={{ padding: "40px 0 80px" }}>
+      <div className="container">
+        {/* Header */}
+        <div style={{ marginBottom: "32px" }}>
+          <h1 style={{ fontSize: "2.4rem" }}>Explore QPM Packages</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: "1.05rem" }}>
+            Search and discover open-source Quantum Language libraries
+          </p>
+        </div>
+
+        {/* Search Bar & Filters */}
+        <div className="glass-card" style={styles.searchCard}>
+          <form onSubmit={handleSearchSubmit} style={styles.searchRow}>
+            <div style={styles.inputWrapper}>
+              <Search size={20} style={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search packages by name, description or keyword..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-field"
+                style={{ paddingLeft: "46px", height: "48px" }}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ height: "48px" }}>
+              Search
+            </button>
+          </form>
+
+          {/* Quick Tags */}
+          <div style={styles.tagRow}>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-dim)", fontWeight: "600" }}>
+              Popular tags:
+            </span>
+            {popularTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => handleTagClick(tag)}
+                className={`tag-badge ${activeTag === tag ? "tag-badge-cyan" : ""}`}
+                style={{ cursor: "pointer", border: "1px solid var(--border-light)" }}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Package Grid / List */}
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)" }}>
+            <RefreshCw size={24} className="spin" style={{ marginBottom: "12px" }} />
+            <p>Searching QPM registry...</p>
+          </div>
+        ) : packages.length === 0 ? (
+          <div className="glass-card" style={{ padding: "60px", textAlign: "center", marginTop: "32px" }}>
+            <Box size={48} color="var(--text-dim)" style={{ marginBottom: "16px" }} />
+            <h2>No packages found</h2>
+            <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
+              No matches found for "{searchTerm}". Try a different keyword or publish your own package.
+            </p>
+          </div>
+        ) : (
+          <div style={{ marginTop: "32px" }}>
+            <div style={{ marginBottom: "16px", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+              Showing {packages.length} package{packages.length === 1 ? "" : "s"}
+            </div>
+            <div style={styles.grid}>
+              {packages.map((pkg, idx) => (
+                <PackageCard key={idx} pkg={pkg} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  searchCard: {
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px"
+  },
+  searchRow: {
+    display: "flex",
+    gap: "16px"
+  },
+  inputWrapper: {
+    position: "relative",
+    flex: 1
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "16px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "var(--text-muted)",
+    pointerEvents: "none"
+  },
+  tagRow: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "8px"
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+    gap: "24px"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/pages/Home.jsx
+--------------------------------------------------------------------------------
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Search, Terminal, Box, HardDrive, ShieldCheck, Zap, ArrowRight, Copy, Check, Download } from "lucide-react";
+import PackageCard from "../components/PackageCard";
+
+export default function Home() {
+  const [featuredPkgs, setFeaturedPkgs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [copiedCmd, setCopiedCmd] = useState(false);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const res = await fetch("/api/registry/search");
+        if (res.ok) {
+          const data = await res.json();
+          setFeaturedPkgs(data.objects || []);
+        }
+      } catch (err) {
+        console.error("Failed to load featured packages:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeatured();
+  }, []);
+
+  const copyCliCmd = () => {
+    navigator.clipboard.writeText("qpm install quantum-core");
+    setCopiedCmd(true);
+    setTimeout(() => setCopiedCmd(false), 2000);
+  };
+
+  return (
+    <div>
+      {/* Hero Section */}
+      <section style={styles.heroSection}>
+        <div className="container" style={styles.heroContainer}>
+          <div style={styles.heroContent}>
+            <div style={styles.badgeLabel}>
+              <Zap size={14} color="var(--accent-cyan)" />
+              <span>Next-Gen Package Manager for Quantum</span>
+            </div>
+
+            <h1 style={styles.heroTitle}>
+              Build & Share Packages with <span className="text-gradient">QPM Registry</span>
+            </h1>
+
+            <p style={styles.heroSub}>
+              Discover, install, and publish Quantum Language modules. Tarballs stored seamlessly in Google Drive, user accounts powered by MongoDB & JWT authentication.
+            </p>
+
+            {/* Terminal Command Box */}
+            <div style={styles.terminalBox}>
+              <div style={styles.terminalHeader}>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <div style={{ ...styles.dot, background: "#ff5f56" }} />
+                  <div style={{ ...styles.dot, background: "#ffbd2e" }} />
+                  <div style={{ ...styles.dot, background: "#27c93f" }} />
+                </div>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>
+                  qpm cli v1.0.0
+                </span>
+              </div>
+              <div style={styles.terminalBody}>
+                <span style={{ color: "var(--accent-cyan)", fontFamily: "var(--font-mono)" }}>$</span>
+                <span style={{ color: "#fff", fontFamily: "var(--font-mono)", fontWeight: "600" }}>
+                  qpm install quantum-core
+                </span>
+                <button onClick={copyCliCmd} style={styles.terminalCopyBtn} title="Copy command">
+                  {copiedCmd ? <Check size={16} color="var(--accent-emerald)" /> : <Copy size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div style={styles.ctaGroup}>
+              <Link to="/explore" className="btn btn-primary" style={{ padding: "12px 28px", fontSize: "1rem" }}>
+                <span>Explore Packages</span>
+                <ArrowRight size={18} />
+              </Link>
+              <Link to="/publish" className="btn btn-secondary" style={{ padding: "12px 28px", fontSize: "1rem" }}>
+                <span>Publish Package</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Architecture Highlights Section */}
+      <section style={styles.featureSection}>
+        <div className="container">
+          <div style={styles.sectionHeader}>
+            <h2 style={{ fontSize: "2rem" }}>Architected for High Speed & Reliability</h2>
+            <p style={{ color: "var(--text-muted)" }}>Fully integrated with your QPM CLI binaries</p>
+          </div>
+
+          <div style={styles.gridFeatures}>
+            <div className="glass-card" style={styles.featureCard}>
+              <div style={{ ...styles.featureIcon, background: "rgba(6, 182, 212, 0.12)", borderColor: "rgba(6, 182, 212, 0.3)" }}>
+                <HardDrive size={24} color="var(--accent-cyan)" />
+              </div>
+              <h3 style={{ fontSize: "1.2rem" }}>Google Drive Tarball Storage</h3>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginTop: "8px" }}>
+                Package archives (`.tgz`) are uploaded directly to Google Drive via Service Account OAuth, streaming straight to `qpm` CLI upon install.
+              </p>
+            </div>
+
+            <div className="glass-card" style={styles.featureCard}>
+              <div style={{ ...styles.featureIcon, background: "rgba(16, 185, 129, 0.12)", borderColor: "rgba(16, 185, 129, 0.3)" }}>
+                <Box size={24} color="var(--accent-emerald)" />
+              </div>
+              <h3 style={{ fontSize: "1.2rem" }}>MongoDB Database</h3>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginTop: "8px" }}>
+                Package metadata, versions, download metrics, and user profiles are indexed in MongoDB for lightning-fast lookups.
+              </p>
+            </div>
+
+            <div className="glass-card" style={styles.featureCard}>
+              <div style={{ ...styles.featureIcon, background: "rgba(168, 85, 247, 0.12)", borderColor: "rgba(168, 85, 247, 0.3)" }}>
+                <ShieldCheck size={24} color="var(--accent-purple)" />
+              </div>
+              <h3 style={{ fontSize: "1.2rem" }}>JWT Authentication</h3>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginTop: "8px" }}>
+                Secure password hashing with bcryptjs and JWT tokens to verify developer credentials for package publishing.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Packages Section */}
+      <section style={{ padding: "60px 0" }}>
+        <div className="container">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px" }}>
+            <div>
+              <h2 style={{ fontSize: "1.8rem" }}>Featured & Top Downloaded Packages</h2>
+              <p style={{ color: "var(--text-muted)" }}>Explore modules created for Quantum</p>
+            </div>
+            <Link to="/explore" className="btn btn-outline btn-sm">
+              View All Packages →
+            </Link>
+          </div>
+
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
+              Loading packages...
+            </div>
+          ) : featuredPkgs.length === 0 ? (
+            <div className="glass-card" style={{ padding: "40px", textAlign: "center" }}>
+              <Box size={40} color="var(--text-dim)" style={{ marginBottom: "12px" }} />
+              <h3>No packages published yet</h3>
+              <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
+                Be the first developer to publish a package to the QPM Registry!
+              </p>
+              <Link to="/publish" className="btn btn-primary btn-sm" style={{ marginTop: "16px" }}>
+                Publish a Package
+              </Link>
+            </div>
+          ) : (
+            <div style={styles.pkgGrid}>
+              {featuredPkgs.map((pkg, idx) => (
+                <PackageCard key={idx} pkg={pkg} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+const styles = {
+  heroSection: {
+    padding: "80px 0 60px",
+    position: "relative"
+  },
+  heroContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center"
+  },
+  heroContent: {
+    maxWidth: "800px"
+  },
+  badgeLabel: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "6px 14px",
+    borderRadius: "var(--radius-full)",
+    background: "rgba(6, 182, 212, 0.1)",
+    border: "1px solid rgba(6, 182, 212, 0.3)",
+    color: "var(--accent-cyan)",
+    fontSize: "0.85rem",
+    fontWeight: "600",
+    marginBottom: "24px"
+  },
+  heroTitle: {
+    fontSize: "3.2rem",
+    lineHeight: "1.15",
+    marginBottom: "20px"
+  },
+  heroSub: {
+    fontSize: "1.15rem",
+    color: "var(--text-muted)",
+    maxWidth: "680px",
+    margin: "0 auto 32px",
+    lineHeight: "1.6"
+  },
+  terminalBox: {
+    background: "rgba(10, 15, 26, 0.95)",
+    border: "1px solid var(--border-light)",
+    borderRadius: "var(--radius-md)",
+    maxWidth: "480px",
+    margin: "0 auto 32px",
+    overflow: "hidden",
+    boxShadow: "0 15px 35px rgba(0, 0, 0, 0.5)"
+  },
+  terminalHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "10px 16px",
+    background: "rgba(255, 255, 255, 0.03)",
+    borderBottom: "1px solid var(--border-light)"
+  },
+  dot: {
+    width: "10px",
+    height: "10px",
+    borderRadius: "50%"
+  },
+  terminalBody: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "16px 20px"
+  },
+  terminalCopyBtn: {
+    marginLeft: "auto",
+    background: "none",
+    border: "none",
+    color: "var(--text-muted)",
+    cursor: "pointer"
+  },
+  ctaGroup: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "16px"
+  },
+  featureSection: {
+    padding: "60px 0"
+  },
+  sectionHeader: {
+    textAlign: "center",
+    marginBottom: "40px"
+  },
+  gridFeatures: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gap: "24px"
+  },
+  featureCard: {
+    padding: "32px"
+  },
+  featureIcon: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "var(--radius-md)",
+    border: "1px solid transparent",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: "20px"
+  },
+  pkgGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+    gap: "24px"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/pages/PackageDetails.jsx
+--------------------------------------------------------------------------------
+import React, { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { Download, HardDrive, User, Calendar, Copy, Check, ExternalLink, Code, Layers, FileText, ChevronRight } from "lucide-react";
+
+export default function PackageDetails() {
+  const { name } = useParams();
+  const [pkg, setPkg] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("readme");
+  const [copiedCmd, setCopiedCmd] = useState(false);
+
+  useEffect(() => {
+    const fetchPackageDetails = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(`/api/registry/${encodeURIComponent(name)}`);
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || "Package not found");
+        }
+        const data = await res.json();
+        setPkg(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackageDetails();
+  }, [name]);
+
+  const copyInstallCmd = () => {
+    navigator.clipboard.writeText(`qpm install ${name}`);
+    setCopiedCmd(true);
+    setTimeout(() => setCopiedCmd(false), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "100px 0", color: "var(--text-muted)" }}>
+        Loading package details...
+      </div>
+    );
+  }
+
+  if (error || !pkg) {
+    return (
+      <div className="container" style={{ padding: "80px 0" }}>
+        <div className="glass-card" style={{ padding: "48px", textAlign: "center" }}>
+          <h2 style={{ fontSize: "2rem", color: "#ef4444" }}>Package Not Found</h2>
+          <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
+            The package "{name}" could not be located in the QPM Registry.
+          </p>
+          <Link to="/explore" className="btn btn-primary" style={{ marginTop: "24px" }}>
+            Back to Explore
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const latestVer = pkg["dist-tags"]?.latest || Object.keys(pkg.versions || {})[0] || "1.0.0";
+  const currentVerObj = pkg.versions?.[latestVer] || {};
+  const downloadUrl = currentVerObj.dist?.tarball || `/api/registry/${pkg.name}/-/${pkg.name}-${latestVer}.tgz`;
+
+  return (
+    <div style={{ padding: "40px 0 80px" }}>
+      <div className="container">
+        {/* Breadcrumb */}
+        <div style={styles.breadcrumb}>
+          <Link to="/explore" style={{ color: "var(--text-muted)" }}>Packages</Link>
+          <ChevronRight size={14} color="var(--text-dim)" />
+          <span style={{ color: "var(--accent-cyan)", fontWeight: "600" }}>{pkg.name}</span>
+        </div>
+
+        {/* Top Header Card */}
+        <div className="glass-card" style={styles.headerCard}>
+          <div style={styles.headerLeft}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <h1 style={{ fontSize: "2.4rem", fontWeight: "800" }}>{pkg.name}</h1>
+              <span className="tag-badge" style={{ fontSize: "0.9rem", padding: "4px 12px" }}>
+                v{latestVer}
+              </span>
+              <div style={styles.badgeDrive}>
+                <HardDrive size={14} color="var(--accent-cyan)" />
+                <span>Google Drive Storage</span>
+              </div>
+            </div>
+
+            <p style={styles.headerDesc}>
+              {pkg.description || "No description provided for this package."}
+            </p>
+
+            {/* Meta Tags */}
+            <div style={styles.metaRow}>
+              <span style={styles.metaBadge}>
+                <User size={14} color="var(--accent-purple)" />
+                Publisher: @{pkg.owner || "community"}
+              </span>
+              <span style={styles.metaBadge}>
+                <Download size={14} color="var(--accent-emerald)" />
+                Downloads: {pkg.downloads || 0}
+              </span>
+              <span style={styles.metaBadge}>
+                License: {pkg.license || "MIT"}
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Install Sidebar */}
+          <div style={styles.headerRight}>
+            <div style={styles.installBox}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontWeight: "700", textTransform: "uppercase" }}>
+                Install Package
+              </span>
+              <div style={styles.cmdRow}>
+                <code style={{ fontFamily: "var(--font-mono)", color: "#fff", fontSize: "0.95rem" }}>
+                  qpm install {pkg.name}
+                </code>
+                <button onClick={copyInstallCmd} className="btn btn-secondary btn-sm">
+                  {copiedCmd ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+
+            <a href={downloadUrl} download className="btn btn-primary" style={{ width: "100%", height: "44px" }}>
+              <Download size={18} />
+              <span>Download Tarball (.tgz)</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Content Tabs & Main Area */}
+        <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "1fr 300px", gap: "32px" }}>
+          {/* Main Tab Content */}
+          <div>
+            <div style={styles.tabNav}>
+              <button
+                onClick={() => setActiveTab("readme")}
+                style={{ ...styles.tabBtn, ...(activeTab === "readme" ? styles.tabBtnActive : {}) }}
+              >
+                <FileText size={16} />
+                <span>README</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("versions")}
+                style={{ ...styles.tabBtn, ...(activeTab === "versions" ? styles.tabBtnActive : {}) }}
+              >
+                <Code size={16} />
+                <span>Versions ({Object.keys(pkg.versions || {}).length})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("deps")}
+                style={{ ...styles.tabBtn, ...(activeTab === "deps" ? styles.tabBtnActive : {}) }}
+              >
+                <Layers size={16} />
+                <span>Dependencies</span>
+              </button>
+            </div>
+
+            {/* Tab Panels */}
+            <div className="glass-card" style={{ padding: "32px", marginTop: "16px" }}>
+              {activeTab === "readme" && (
+                <div style={styles.readmeContent}>
+                  <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-body)", lineHeight: "1.7", color: "var(--text-main)" }}>
+                    {pkg.readme || `# ${pkg.name}\n\n${pkg.description || "No detailed readme available."}`}
+                  </pre>
+                </div>
+              )}
+
+              {activeTab === "versions" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <h3 style={{ fontSize: "1.2rem", marginBottom: "8px" }}>Version History</h3>
+                  {Object.entries(pkg.versions || {}).map(([ver, data]) => (
+                    <div key={ver} style={styles.versionItem}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontWeight: "700", fontSize: "1.1rem" }}>v{ver}</span>
+                          {ver === latestVer && <span className="tag-badge tag-badge-cyan">latest</span>}
+                        </div>
+                        <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                          Released {pkg.time?.[ver] ? new Date(pkg.time[ver]).toLocaleDateString() : "Recently"}
+                        </span>
+                      </div>
+                      <a href={data.dist?.tarball || downloadUrl} download className="btn btn-secondary btn-sm">
+                        <Download size={14} />
+                        <span>.tgz</span>
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === "deps" && (
+                <div>
+                  <h3 style={{ fontSize: "1.2rem", marginBottom: "16px" }}>Package Dependencies</h3>
+                  {currentVerObj.dependencies && Object.keys(currentVerObj.dependencies).length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {Object.entries(currentVerObj.dependencies).map(([dep, range]) => (
+                        <div key={dep} style={styles.depItem}>
+                          <span style={{ fontWeight: "600", color: "var(--accent-cyan)" }}>{dep}</span>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                            {range}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: "var(--text-muted)" }}>This package has zero dependencies.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Sidebar Metadata */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div className="glass-card" style={{ padding: "24px" }}>
+              <h4 style={{ fontSize: "1rem", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-dim)" }}>
+                Repository & Links
+              </h4>
+              {pkg.repository ? (
+                <a href={pkg.repository} target="_blank" rel="noreferrer" style={styles.sideLink}>
+                  <ExternalLink size={16} />
+                  <span>GitHub Repository</span>
+                </a>
+              ) : (
+                <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>No repository link</span>
+              )}
+            </div>
+
+            <div className="glass-card" style={{ padding: "24px" }}>
+              <h4 style={{ fontSize: "1rem", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-dim)" }}>
+                Keywords
+              </h4>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {pkg.keywords && pkg.keywords.length > 0 ? (
+                  pkg.keywords.map((kw, i) => (
+                    <span key={i} className="tag-badge tag-badge-cyan">
+                      #{kw}
+                    </span>
+                  ))
+                ) : (
+                  <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>No keywords specified</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  breadcrumb: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "0.9rem",
+    marginBottom: "20px"
+  },
+  headerCard: {
+    padding: "36px",
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "40px",
+    alignItems: "flex-start"
+  },
+  headerLeft: {
+    flex: 1
+  },
+  badgeDrive: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "4px 10px",
+    borderRadius: "var(--radius-sm)",
+    background: "rgba(6, 182, 212, 0.12)",
+    border: "1px solid rgba(6, 182, 212, 0.3)",
+    fontSize: "0.8rem",
+    fontWeight: "700",
+    color: "var(--accent-cyan)"
+  },
+  headerDesc: {
+    fontSize: "1.1rem",
+    color: "var(--text-muted)",
+    marginTop: "16px",
+    marginBottom: "24px"
+  },
+  metaRow: {
+    display: "flex",
+    gap: "16px",
+    flexWrap: "wrap"
+  },
+  metaBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "6px 14px",
+    borderRadius: "var(--radius-md)",
+    background: "rgba(255, 255, 255, 0.04)",
+    border: "1px solid var(--border-light)",
+    fontSize: "0.85rem",
+    color: "var(--text-main)"
+  },
+  headerRight: {
+    width: "320px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px"
+  },
+  installBox: {
+    background: "rgba(10, 15, 26, 0.8)",
+    border: "1px solid var(--border-light)",
+    borderRadius: "var(--radius-md)",
+    padding: "16px"
+  },
+  cmdRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: "8px"
+  },
+  tabNav: {
+    display: "flex",
+    gap: "12px",
+    borderBottom: "1px solid var(--border-light)",
+    paddingBottom: "12px"
+  },
+  tabBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    background: "none",
+    border: "none",
+    color: "var(--text-muted)",
+    fontFamily: "var(--font-heading)",
+    fontWeight: "600",
+    fontSize: "0.95rem",
+    cursor: "pointer",
+    padding: "8px 16px",
+    borderRadius: "var(--radius-md)",
+    transition: "all var(--transition-fast)"
+  },
+  tabBtnActive: {
+    background: "rgba(99, 102, 241, 0.15)",
+    color: "#fff",
+    border: "1px solid rgba(99, 102, 241, 0.3)"
+  },
+  readmeContent: {
+    overflowX: "auto"
+  },
+  versionItem: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    background: "rgba(255, 255, 255, 0.02)",
+    border: "1px solid var(--border-light)",
+    borderRadius: "var(--radius-md)"
+  },
+  depItem: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "10px 14px",
+    background: "rgba(255, 255, 255, 0.02)",
+    border: "1px solid var(--border-light)",
+    borderRadius: "var(--radius-md)"
+  },
+  sideLink: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    color: "var(--accent-cyan)",
+    fontSize: "0.95rem",
+    fontWeight: "600"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/pages/Profile.jsx
+--------------------------------------------------------------------------------
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { User, Mail, Calendar, Key, Copy, Check, Box, Plus, LogOut } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import PackageCard from "../components/PackageCard";
+
+export default function Profile() {
+  const { user, token, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [userPackages, setUserPackages] = useState([]);
+  const [loadingPkgs, setLoadingPkgs] = useState(true);
+  const [copiedToken, setCopiedToken] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUserPackages = async () => {
+      setLoadingPkgs(true);
+      try {
+        const res = await fetch("/api/registry/user/my-packages", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUserPackages(data.packages || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user packages:", err);
+      } finally {
+        setLoadingPkgs(false);
+      }
+    };
+
+    fetchUserPackages();
+  }, [user, token]);
+
+  if (!user) {
+    return (
+      <div className="container" style={{ padding: "80px 0" }}>
+        <div className="glass-card" style={{ padding: "48px", textAlign: "center", maxWidth: "500px", margin: "0 auto" }}>
+          <h2>Access Denied</h2>
+          <p style={{ color: "var(--text-muted)", marginTop: "8px", marginBottom: "24px" }}>
+            Please log in to view your developer profile and package dashboard.
+          </p>
+          <button onClick={() => navigate("/")} className="btn btn-primary">
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const copyToken = () => {
+    navigator.clipboard.writeText(token || "");
+    setCopiedToken(true);
+    setTimeout(() => setCopiedToken(false), 2000);
+  };
+
+  return (
+    <div style={{ padding: "40px 0 80px" }}>
+      <div className="container">
+        {/* Profile Card Header */}
+        <div className="glass-card" style={styles.headerCard}>
+          <div style={styles.avatarBig}>
+            {user.username.substring(0, 2).toUpperCase()}
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <h1 style={{ fontSize: "2rem" }}>@{user.username}</h1>
+              <span className="tag-badge tag-badge-emerald">Developer</span>
+            </div>
+            <p style={{ color: "var(--text-muted)", marginTop: "4px" }}>
+              {user.bio || "Quantum language developer & package maintainer"}
+            </p>
+
+            <div style={styles.infoMeta}>
+              <span style={styles.metaItem}>
+                <Mail size={14} color="var(--accent-cyan)" />
+                {user.email}
+              </span>
+              <span style={styles.metaItem}>
+                <Calendar size={14} color="var(--accent-purple)" />
+                Joined {new Date(user.createdAt || Date.now()).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+
+          <button onClick={logout} className="btn btn-secondary btn-sm" style={{ alignSelf: "flex-start" }}>
+            <LogOut size={16} />
+            <span>Logout</span>
+          </button>
+        </div>
+
+        {/* API Token Section */}
+        <div className="glass-card" style={{ padding: "24px", marginTop: "24px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+            <Key size={18} color="var(--accent-amber)" />
+            <h3 style={{ fontSize: "1.1rem" }}>Your QPM API Authentication Token</h3>
+          </div>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "12px" }}>
+            Use this JWT token to authenticate package publishing via curl or QPM CLI scripts.
+          </p>
+
+          <div style={styles.tokenBox}>
+            <code style={{ fontSize: "0.85rem", color: "#67e8f9", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {token}
+            </code>
+            <button onClick={copyToken} className="btn btn-secondary btn-sm">
+              {copiedToken ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
+              <span>{copiedToken ? "Copied Token" : "Copy Token"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* My Packages Section */}
+        <div style={{ marginTop: "40px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+            <div>
+              <h2 style={{ fontSize: "1.6rem" }}>My Published Packages</h2>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                Packages maintained by @{user.username}
+              </p>
+            </div>
+            <Link to="/publish" className="btn btn-primary btn-sm">
+              <Plus size={16} />
+              <span>Publish New Package</span>
+            </Link>
+          </div>
+
+          {loadingPkgs ? (
+            <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
+              Loading your packages...
+            </div>
+          ) : userPackages.length === 0 ? (
+            <div className="glass-card" style={{ padding: "40px", textAlign: "center" }}>
+              <Box size={40} color="var(--text-dim)" style={{ marginBottom: "12px" }} />
+              <h3>No packages published yet</h3>
+              <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
+                You haven't published any packages under @{user.username}.
+              </p>
+              <Link to="/publish" className="btn btn-primary btn-sm" style={{ marginTop: "16px" }}>
+                Publish Your First Package
+              </Link>
+            </div>
+          ) : (
+            <div style={styles.pkgGrid}>
+              {userPackages.map((pkg, idx) => (
+                <PackageCard key={idx} pkg={pkg} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  headerCard: {
+    padding: "36px",
+    display: "flex",
+    alignItems: "center",
+    gap: "28px"
+  },
+  avatarBig: {
+    width: "72px",
+    height: "72px",
+    borderRadius: "50%",
+    background: "linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "1.8rem",
+    fontWeight: "800",
+    color: "#fff",
+    boxShadow: "0 0 20px var(--primary-glow)"
+  },
+  infoMeta: {
+    display: "flex",
+    gap: "20px",
+    marginTop: "12px",
+    fontSize: "0.85rem",
+    color: "var(--text-dim)"
+  },
+  metaItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px"
+  },
+  tokenBox: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "16px",
+    background: "rgba(10, 15, 26, 0.8)",
+    border: "1px solid var(--border-light)",
+    padding: "10px 16px",
+    borderRadius: "var(--radius-md)"
+  },
+  pkgGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+    gap: "24px"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/pages/Publish.jsx
+--------------------------------------------------------------------------------
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Upload, HardDrive, CheckCircle2, AlertTriangle, FileArchive, ArrowRight, Box } from "lucide-react";
+import confetti from "canvas-confetti";
+import { useAuth } from "../context/AuthContext";
+
+export default function Publish() {
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [version, setVersion] = useState("1.0.0");
+  const [description, setDescription] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [license, setLicense] = useState("MIT");
+  const [repository, setRepository] = useState("");
+  const [readme, setReadme] = useState("");
+  const [dependencies, setDependencies] = useState("{}");
+  
+  const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setFileName(selectedFile.name);
+      // Auto fill name if empty
+      if (!name) {
+        const cleanName = selectedFile.name.replace(/\.tgz$|\.tar\.gz$/, "").replace(/-\d+\.\d+\.\d+$/, "");
+        setName(cleanName);
+      }
+    }
+  };
+
+  const handlePublish = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      if (!name || !version) {
+        throw new Error("Package name and version are required.");
+      }
+
+      // Convert file to Base64 if file uploaded
+      let fileBase64 = "";
+      if (file) {
+        fileBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (err) => reject(err);
+        });
+      }
+
+      const headers = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const payload = {
+        name,
+        version,
+        description,
+        keywords,
+        license,
+        repository,
+        readme: readme || `# ${name}\n\n${description}`,
+        dependencies,
+        fileBase64
+      };
+
+      const res = await fetch("/api/registry/publish", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to publish package.");
+      }
+
+      setSuccess(`Package ${name}@${version} published and stored in Google Drive!`);
+      
+      // Trigger celebrate confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      setTimeout(() => {
+        navigate(`/package/${name}`);
+      }, 2000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: "40px 0 80px" }}>
+      <div className="container" style={{ maxWidth: "800px" }}>
+        <div style={{ textAlign: "center", marginBottom: "32px" }}>
+          <div style={styles.badgeDrive}>
+            <HardDrive size={16} color="var(--accent-cyan)" />
+            <span>Google Drive Package Pipeline</span>
+          </div>
+          <h1 style={{ fontSize: "2.4rem", marginTop: "12px" }}>Publish a Quantum Package</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: "1.05rem" }}>
+            Upload package archive (.tgz) to store on Google Drive & serve to QPM CLI
+          </p>
+        </div>
+
+        {!user && (
+          <div style={styles.warningBox}>
+            <AlertTriangle size={20} color="var(--accent-amber)" />
+            <div>
+              <strong>Note: You are currently not logged in.</strong>
+              <p style={{ fontSize: "0.85rem", marginTop: "2px" }}>
+                Publishing as guest will assign package ownership to community. Log in to claim author rights.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {error && <div style={styles.errorAlert}>{error}</div>}
+        {success && <div style={styles.successAlert}>{success}</div>}
+
+        <form onSubmit={handlePublish} className="glass-card" style={styles.formCard}>
+          {/* File Upload Zone */}
+          <div>
+            <label style={styles.label}>Package Tarball File (.tgz)</label>
+            <div style={styles.dropZone}>
+              <input
+                type="file"
+                accept=".tgz,.gz,.tar.gz"
+                onChange={handleFileChange}
+                style={styles.fileInput}
+              />
+              <FileArchive size={36} color="var(--accent-cyan)" style={{ marginBottom: "8px" }} />
+              {fileName ? (
+                <div>
+                  <span style={{ fontWeight: "700", color: "#fff" }}>{fileName}</span>
+                  <p style={{ fontSize: "0.8rem", color: "var(--accent-emerald)" }}>File ready for Google Drive upload</p>
+                </div>
+              ) : (
+                <div>
+                  <span style={{ fontWeight: "600" }}>Click to select `.tgz` archive or drag file here</span>
+                  <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginTop: "4px" }}>
+                    Optional: If omitted, an empty package container will be generated.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px" }}>
+            <div>
+              <label style={styles.label}>Package Name *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. quantum-utils"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Version *</label>
+              <input
+                type="text"
+                required
+                placeholder="1.0.0"
+                value={version}
+                onChange={(e) => setVersion(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={styles.label}>Description</label>
+            <input
+              type="text"
+              placeholder="High performance utility functions for Quantum Language"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="input-field"
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div>
+              <label style={styles.label}>Keywords (comma separated)</label>
+              <input
+                type="text"
+                placeholder="quantum, math, matrix"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label style={styles.label}>License</label>
+              <input
+                type="text"
+                placeholder="MIT"
+                value={license}
+                onChange={(e) => setLicense(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={styles.label}>GitHub Repository URL (Optional)</label>
+            <input
+              type="url"
+              placeholder="https://github.com/username/repository"
+              value={repository}
+              onChange={(e) => setRepository(e.target.value)}
+              className="input-field"
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Dependencies JSON (Optional)</label>
+            <textarea
+              rows={3}
+              placeholder='{ "quantum-core": "^1.0.0" }'
+              value={dependencies}
+              onChange={(e) => setDependencies(e.target.value)}
+              className="input-field"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>README Markdown Content</label>
+            <textarea
+              rows={6}
+              placeholder="# My Package&#10;&#10;Installation: `qpm install package-name`"
+              value={readme}
+              onChange={(e) => setReadme(e.target.value)}
+              className="input-field"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "0.9rem" }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-primary"
+            style={{ width: "100%", height: "50px", fontSize: "1.05rem", marginTop: "12px" }}
+          >
+            {loading ? (
+              "Uploading Tarball to Google Drive & MongoDB..."
+            ) : (
+              <>
+                <Upload size={20} />
+                <span>Publish Package to QPM</span>
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  badgeDrive: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "6px 14px",
+    borderRadius: "var(--radius-full)",
+    background: "rgba(6, 182, 212, 0.1)",
+    border: "1px solid rgba(6, 182, 212, 0.3)",
+    color: "var(--accent-cyan)",
+    fontSize: "0.85rem",
+    fontWeight: "600"
+  },
+  warningBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    background: "rgba(245, 158, 11, 0.12)",
+    border: "1px solid rgba(245, 158, 11, 0.3)",
+    borderRadius: "var(--radius-md)",
+    padding: "14px 20px",
+    marginBottom: "24px",
+    color: "#fde68a"
+  },
+  errorAlert: {
+    background: "rgba(239, 68, 68, 0.12)",
+    border: "1px solid rgba(239, 68, 68, 0.3)",
+    color: "#fca5a5",
+    padding: "14px 20px",
+    borderRadius: "var(--radius-md)",
+    marginBottom: "24px",
+    textAlign: "center"
+  },
+  successAlert: {
+    background: "rgba(16, 185, 129, 0.12)",
+    border: "1px solid rgba(16, 185, 129, 0.3)",
+    color: "#6ee7b7",
+    padding: "14px 20px",
+    borderRadius: "var(--radius-md)",
+    marginBottom: "24px",
+    textAlign: "center",
+    fontWeight: "600"
+  },
+  formCard: {
+    padding: "36px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px"
+  },
+  label: {
+    display: "block",
+    fontSize: "0.85rem",
+    fontWeight: "700",
+    color: "var(--text-muted)",
+    marginBottom: "6px",
+    textTransform: "uppercase",
+    letterSpacing: "0.03em"
+  },
+  dropZone: {
+    border: "2px dashed var(--border-light)",
+    borderRadius: "var(--radius-md)",
+    padding: "24px",
+    textAlign: "center",
+    position: "relative",
+    cursor: "pointer",
+    background: "rgba(15, 23, 42, 0.5)",
+    transition: "all var(--transition-fast)"
+  },
+  fileInput: {
+    position: "absolute",
+    inset: 0,
+    opacity: 0,
+    cursor: "pointer",
+    width: "100%",
+    height: "100%"
+  }
+};
+
+
+--------------------------------------------------------------------------------
+FILE: /src/App.jsx
+--------------------------------------------------------------------------------
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Explore from "./pages/Explore";
+import PackageDetails from "./pages/PackageDetails";
+import Publish from "./pages/Publish";
+import Profile from "./pages/Profile";
+
+export default function App() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <Navbar />
+      <main style={{ flex: 1 }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/package/:name" element={<PackageDetails />} />
+          <Route path="/publish" element={<Publish />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+
+--------------------------------------------------------------------------------
+FILE: /src/index.css
+--------------------------------------------------------------------------------
+:root {
+  --bg-dark: #090d16;
+  --bg-card: rgba(18, 24, 38, 0.7);
+  --bg-card-hover: rgba(28, 36, 56, 0.85);
+  --bg-glass: rgba(15, 23, 42, 0.65);
+  
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-glow: rgba(99, 102, 241, 0.35);
+  
+  --accent-cyan: #06b6d4;
+  --accent-purple: #a855f7;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(99, 102, 241, 0.4);
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+  
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 60%);
+  background-attachment: fixed;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-cyan);
+}
+
+/* Containers */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Gradient Text */
+.text-gradient {
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #38bdf8 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glass Card */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all var(--transition-smooth);
+}
+
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-glow);
+  transform: translateY(-2px);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--accent-cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.btn-outline:hover {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: var(--accent-cyan);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Input Fields */
+.input-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Badge / Tags */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.tag-badge-cyan {
+  background: rgba(6, 182, 212, 0.12);
+  color: #67e8f9;
+  border-color: rgba(6, 182, 212, 0.2);
+}
+
+.tag-badge-emerald {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+
+--------------------------------------------------------------------------------
+FILE: /src/main.jsx
+--------------------------------------------------------------------------------
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import App from "./App";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+);
+
+
+--------------------------------------------------------------------------------
+FILE: /.gitignore
+--------------------------------------------------------------------------------
+node_modules
+
+--------------------------------------------------------------------------------
+FILE: /index.html
+--------------------------------------------------------------------------------
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QPM — Quantum Package Manager Registry</title>
+    <meta name="description" content="Discover, publish, and install packages for the Quantum ecosystem with Google Drive storage & MongoDB." />
+    <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+
+--------------------------------------------------------------------------------
+FILE: /package-lock.json
+--------------------------------------------------------------------------------
+{
+  "name": "qpm-website-frontend",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "qpm-website-frontend",
+      "version": "1.0.0",
+      "dependencies": {
+        "canvas-confetti": "^1.9.4",
+        "lucide-react": "^0.378.0",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "react-router-dom": "^6.23.1"
+      },
+      "devDependencies": {
+        "@types/react": "^18.3.3",
+        "@types/react-dom": "^18.3.0",
+        "@vitejs/plugin-react": "^4.3.0",
+        "vite": "^5.2.11"
+      }
+    },
+    "node_modules/@babel/code-frame": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz",
+      "integrity": "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/helper-validator-identifier": "^7.29.7",
+        "js-tokens": "^4.0.0",
+        "picocolors": "^1.1.1"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/compat-data": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.29.7.tgz",
+      "integrity": "sha512-locTkQyKvwIEgBzVrn8693ebc97F2U8ZHjbXwDXJ5Fn2TCpNwTlKcaKLkdHop5c/icOFE7qt7Q9JC5hnKNa6Gg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/core": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/core/-/core-7.29.7.tgz",
+      "integrity": "sha512-RgHBCvtjbOK2gXSNBNIkNoEc9qoVEtau3hj8gEqKQuL3HZAibKarWFEI3Lfm6EYKkLalOh8eSrj9b+ch9H/VBA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/code-frame": "^7.29.7",
+        "@babel/generator": "^7.29.7",
+        "@babel/helper-compilation-targets": "^7.29.7",
+        "@babel/helper-module-transforms": "^7.29.7",
+        "@babel/helpers": "^7.29.7",
+        "@babel/parser": "^7.29.7",
+        "@babel/template": "^7.29.7",
+        "@babel/traverse": "^7.29.7",
+        "@babel/types": "^7.29.7",
+        "@jridgewell/remapping": "^2.3.5",
+        "convert-source-map": "^2.0.0",
+        "debug": "^4.1.0",
+        "gensync": "^1.0.0-beta.2",
+        "json5": "^2.2.3",
+        "semver": "^6.3.1"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/babel"
+      }
+    },
+    "node_modules/@babel/generator": {
+      "version": "7.29.8",
+      "resolved": "https://registry.npmjs.org/@babel/generator/-/generator-7.29.8.tgz",
+      "integrity": "sha512-gZbepsdh3WDtgZKWL+vTPh71LSBrm/Y4/QDZBVCcYfmeTEEuoOYwlSy+G1StfJg+/Zy550u/3TATbm7qDbbMtg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/parser": "^7.29.8",
+        "@babel/types": "^7.29.8",
+        "@jridgewell/gen-mapping": "^0.3.12",
+        "@jridgewell/trace-mapping": "^0.3.28",
+        "jsesc": "^3.0.2"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helper-compilation-targets": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-compilation-targets/-/helper-compilation-targets-7.29.7.tgz",
+      "integrity": "sha512-wem6WaBj4NaVYVdNhLPPVacES6ZJ+KBBfSkTMD3YZxbP3rm3Di85tJU5ljaUNhaOynt+Aj0xruhYuzQBt8n71g==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/compat-data": "^7.29.7",
+        "@babel/helper-validator-option": "^7.29.7",
+        "browserslist": "^4.24.0",
+        "lru-cache": "^5.1.1",
+        "semver": "^6.3.1"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helper-globals": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-globals/-/helper-globals-7.29.7.tgz",
+      "integrity": "sha512-3nQVUAtvkKH9zahfWgw96Jc/uFOmjACE1kQz82E2lqWmHBgjzbNlsC22nuQTfahmWeQtTq5nQ/4Nnd2A1wj4zA==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helper-module-imports": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-module-imports/-/helper-module-imports-7.29.7.tgz",
+      "integrity": "sha512-ejHwrQQYcm9xnTivShn2IDOlIzInN34AXskvq9QicvCtEzq1Vzclu/tKF8Jq1Cg8JG2GL6/EmjgsCT7lXepE3g==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/traverse": "^7.29.7",
+        "@babel/types": "^7.29.7"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helper-module-transforms": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-module-transforms/-/helper-module-transforms-7.29.7.tgz",
+      "integrity": "sha512-UPUVSyXbOh627KiCIGQSgwWzGeBKLkaJ9PJEdrngIwMSzxLR4jS4+f1f1jb7VzBbg8nFLaYotvVPFCTqdrmTAg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/helper-module-imports": "^7.29.7",
+        "@babel/helper-validator-identifier": "^7.29.7",
+        "@babel/traverse": "^7.29.7"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      },
+      "peerDependencies": {
+        "@babel/core": "^7.0.0"
+      }
+    },
+    "node_modules/@babel/helper-plugin-utils": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-plugin-utils/-/helper-plugin-utils-7.29.7.tgz",
+      "integrity": "sha512-G7sHYigPY17oO5SYWnfD/0MTBwVR781S/JI643e/JhUYgVgWE/61SoW3NH9KWUKyKq5LVh3npif99Wkt6j86Jw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helper-string-parser": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.29.7.tgz",
+      "integrity": "sha512-Pb5ijPrZ89GDH8223L4UP8i6QApWxs04RbPQJTeWDV0/keR2E36MeKnyr6LYmUUvqRRI+Iv87SuF1W6ErINzYw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helper-validator-identifier": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz",
+      "integrity": "sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helper-validator-option": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helper-validator-option/-/helper-validator-option-7.29.7.tgz",
+      "integrity": "sha512-N9ZErrD+yW5geCDtBqnOoxmR8+tNKiGuxKlDpuJxfsqpa2dFcexaziGAE/qoHLiDDreVNMupxGmSoNlyvsA3gw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/helpers": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/helpers/-/helpers-7.29.7.tgz",
+      "integrity": "sha512-1k2lAGRMfHTcwuNYcCNUmaUffmQv8KWMfh2iJUUeRlwlwH4FdNG7mfPI10NPfLHJFThE4Tyr4mv7kTNZOiPuBg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/template": "^7.29.7",
+        "@babel/types": "^7.29.7"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/parser": {
+      "version": "7.29.8",
+      "resolved": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.8.tgz",
+      "integrity": "sha512-E8lTAYNB1KW+FH+VGJuZM1ioAx2E6oVlvQFRrf5P8ZZmsiJXYAD9vTFV7yyEURNzgh1dFqMZuO6tUwcARbqFCA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/types": "^7.29.8"
+      },
+      "bin": {
+        "parser": "bin/babel-parser.js"
+      },
+      "engines": {
+        "node": ">=6.0.0"
+      }
+    },
+    "node_modules/@babel/plugin-transform-react-jsx-self": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/plugin-transform-react-jsx-self/-/plugin-transform-react-jsx-self-7.29.7.tgz",
+      "integrity": "sha512-TL0hMc9xzy86VD31nUiwzd5otRAcyEPcsegCxolO0PvcXuH1v0kECe/UIznYFihpkvU5wg/jk4v0TTEFfm53fw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/helper-plugin-utils": "^7.29.7"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      },
+      "peerDependencies": {
+        "@babel/core": "^7.0.0-0"
+      }
+    },
+    "node_modules/@babel/plugin-transform-react-jsx-source": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/plugin-transform-react-jsx-source/-/plugin-transform-react-jsx-source-7.29.7.tgz",
+      "integrity": "sha512-06IyK09H3wi4cGbhDBwp5gUGo0IKtnYa8tyTiephirPCK6fbobVGiXMMI5zLQ4aKEYP3wZ3ArU44o+8KMrSG/Q==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/helper-plugin-utils": "^7.29.7"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      },
+      "peerDependencies": {
+        "@babel/core": "^7.0.0-0"
+      }
+    },
+    "node_modules/@babel/template": {
+      "version": "7.29.7",
+      "resolved": "https://registry.npmjs.org/@babel/template/-/template-7.29.7.tgz",
+      "integrity": "sha512-puq+Gf35oI24FeN11LkoUQFqv9uwNeWpxXZi/Ji3rRIoKAzKnxRaZ+Gkj0vKS9ZCiTESfng1N9LyOyXvo+m+Gg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/code-frame": "^7.29.7",
+        "@babel/parser": "^7.29.7",
+        "@babel/types": "^7.29.7"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/traverse": {
+      "version": "7.29.8",
+      "resolved": "https://registry.npmjs.org/@babel/traverse/-/traverse-7.29.8.tgz",
+      "integrity": "sha512-I5z7H3bf/41ktsNVLtpN0wAa336HkqIHQ5BuPLEhTkt1jVSyZpeNKIzTgEWmlxjdg81R0IgUCcaE+Ok3NvrfZg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/code-frame": "^7.29.7",
+        "@babel/generator": "^7.29.8",
+        "@babel/helper-globals": "^7.29.7",
+        "@babel/parser": "^7.29.8",
+        "@babel/template": "^7.29.7",
+        "@babel/types": "^7.29.8",
+        "debug": "^4.3.1"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@babel/types": {
+      "version": "7.29.8",
+      "resolved": "https://registry.npmjs.org/@babel/types/-/types-7.29.8.tgz",
+      "integrity": "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/helper-string-parser": "^7.29.7",
+        "@babel/helper-validator-identifier": "^7.29.7"
+      },
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/@esbuild/aix-ppc64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.21.5.tgz",
+      "integrity": "sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==",
+      "cpu": [
+        "ppc64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "aix"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/android-arm": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.21.5.tgz",
+      "integrity": "sha512-vCPvzSjpPHEi1siZdlvAlsPxXl7WbOVUBBAowWug4rJHb68Ox8KualB+1ocNvT5fjv6wpkX6o/iEpbDrf68zcg==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "android"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/android-arm64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.21.5.tgz",
+      "integrity": "sha512-c0uX9VAUBQ7dTDCjq+wdyGLowMdtR/GoC2U5IYk/7D1H1JYC0qseD7+11iMP2mRLN9RcCMRcjC4YMclCzGwS/A==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "android"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/android-x64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.21.5.tgz",
+      "integrity": "sha512-D7aPRUUNHRBwHxzxRvp856rjUHRFW1SdQATKXH2hqA0kAZb1hKmi02OpYRacl0TxIGz/ZmXWlbZgjwWYaCakTA==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "android"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/darwin-arm64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.21.5.tgz",
+      "integrity": "sha512-DwqXqZyuk5AiWWf3UfLiRDJ5EDd49zg6O9wclZ7kUMv2WRFr4HKjXp/5t8JZ11QbQfUS6/cRCKGwYhtNAY88kQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/darwin-x64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.21.5.tgz",
+      "integrity": "sha512-se/JjF8NlmKVG4kNIuyWMV/22ZaerB+qaSi5MdrXtd6R08kvs2qCN4C09miupktDitvh8jRFflwGFBQcxZRjbw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/freebsd-arm64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.21.5.tgz",
+      "integrity": "sha512-5JcRxxRDUJLX8JXp/wcBCy3pENnCgBR9bN6JsY4OmhfUtIHe3ZW0mawA7+RDAcMLrMIZaf03NlQiX9DGyB8h4g==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "freebsd"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/freebsd-x64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.21.5.tgz",
+      "integrity": "sha512-J95kNBj1zkbMXtHVH29bBriQygMXqoVQOQYA+ISs0/2l3T9/kj42ow2mpqerRBxDJnmkUDCaQT/dfNXWX/ZZCQ==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "freebsd"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-arm": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.21.5.tgz",
+      "integrity": "sha512-bPb5AHZtbeNGjCKVZ9UGqGwo8EUu4cLq68E95A53KlxAPRmUyYv2D6F0uUI65XisGOL1hBP5mTronbgo+0bFcA==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-arm64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.21.5.tgz",
+      "integrity": "sha512-ibKvmyYzKsBeX8d8I7MH/TMfWDXBF3db4qM6sy+7re0YXya+K1cem3on9XgdT2EQGMu4hQyZhan7TeQ8XkGp4Q==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-ia32": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.21.5.tgz",
+      "integrity": "sha512-YvjXDqLRqPDl2dvRODYmmhz4rPeVKYvppfGYKSNGdyZkA01046pLWyRKKI3ax8fbJoK5QbxblURkwK/MWY18Tg==",
+      "cpu": [
+        "ia32"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-loong64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.21.5.tgz",
+      "integrity": "sha512-uHf1BmMG8qEvzdrzAqg2SIG/02+4/DHB6a9Kbya0XDvwDEKCoC8ZRWI5JJvNdUjtciBGFQ5PuBlpEOXQj+JQSg==",
+      "cpu": [
+        "loong64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-mips64el": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.21.5.tgz",
+      "integrity": "sha512-IajOmO+KJK23bj52dFSNCMsz1QP1DqM6cwLUv3W1QwyxkyIWecfafnI555fvSGqEKwjMXVLokcV5ygHW5b3Jbg==",
+      "cpu": [
+        "mips64el"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-ppc64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.21.5.tgz",
+      "integrity": "sha512-1hHV/Z4OEfMwpLO8rp7CvlhBDnjsC3CttJXIhBi+5Aj5r+MBvy4egg7wCbe//hSsT+RvDAG7s81tAvpL2XAE4w==",
+      "cpu": [
+        "ppc64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-riscv64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.21.5.tgz",
+      "integrity": "sha512-2HdXDMd9GMgTGrPWnJzP2ALSokE/0O5HhTUvWIbD3YdjME8JwvSCnNGBnTThKGEB91OZhzrJ4qIIxk/SBmyDDA==",
+      "cpu": [
+        "riscv64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-s390x": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.21.5.tgz",
+      "integrity": "sha512-zus5sxzqBJD3eXxwvjN1yQkRepANgxE9lgOW2qLnmr8ikMTphkjgXu1HR01K4FJg8h1kEEDAqDcZQtbrRnB41A==",
+      "cpu": [
+        "s390x"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/linux-x64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.21.5.tgz",
+      "integrity": "sha512-1rYdTpyv03iycF1+BhzrzQJCdOuAOtaqHTWJZCWvijKD2N5Xu0TtVC8/+1faWqcP9iBCWOmjmhoH94dH82BxPQ==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/netbsd-x64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.21.5.tgz",
+      "integrity": "sha512-Woi2MXzXjMULccIwMnLciyZH4nCIMpWQAs049KEeMvOcNADVxo0UBIQPfSmxB3CWKedngg7sWZdLvLczpe0tLg==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "netbsd"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/openbsd-x64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.21.5.tgz",
+      "integrity": "sha512-HLNNw99xsvx12lFBUwoT8EVCsSvRNDVxNpjZ7bPn947b8gJPzeHWyNVhFsaerc0n3TsbOINvRP2byTZ5LKezow==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "openbsd"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/sunos-x64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.21.5.tgz",
+      "integrity": "sha512-6+gjmFpfy0BHU5Tpptkuh8+uw3mnrvgs+dSPQXQOv3ekbordwnzTVEb4qnIvQcYXq6gzkyTnoZ9dZG+D4garKg==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "sunos"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/win32-arm64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.21.5.tgz",
+      "integrity": "sha512-Z0gOTd75VvXqyq7nsl93zwahcTROgqvuAcYDUr+vOv8uHhNSKROyU961kgtCD1e95IqPKSQKH7tBTslnS3tA8A==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/win32-ia32": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.21.5.tgz",
+      "integrity": "sha512-SWXFF1CL2RVNMaVs+BBClwtfZSvDgtL//G/smwAc5oVK/UPu2Gu9tIaRgFmYFFKrmg3SyAjSrElf0TiJ1v8fYA==",
+      "cpu": [
+        "ia32"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@esbuild/win32-x64": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.21.5.tgz",
+      "integrity": "sha512-tQd/1efJuzPC6rCFwEvLtci/xNFcTZknmXs98FYDfGE4wP9ClFV98nyKrzJKVPMhdDnjzLhdUyMX4PsQAPjwIw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">=12"
+      }
+    },
+    "node_modules/@jridgewell/gen-mapping": {
+      "version": "0.3.13",
+      "resolved": "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.13.tgz",
+      "integrity": "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/sourcemap-codec": "^1.5.0",
+        "@jridgewell/trace-mapping": "^0.3.24"
+      }
+    },
+    "node_modules/@jridgewell/remapping": {
+      "version": "2.3.5",
+      "resolved": "https://registry.npmjs.org/@jridgewell/remapping/-/remapping-2.3.5.tgz",
+      "integrity": "sha512-LI9u/+laYG4Ds1TDKSJW2YPrIlcVYOwi2fUC6xB43lueCjgxV4lffOCZCtYFiH6TNOX+tQKXx97T4IKHbhyHEQ==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/gen-mapping": "^0.3.5",
+        "@jridgewell/trace-mapping": "^0.3.24"
+      }
+    },
+    "node_modules/@jridgewell/resolve-uri": {
+      "version": "3.1.2",
+      "resolved": "https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.2.tgz",
+      "integrity": "sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.0.0"
+      }
+    },
+    "node_modules/@jridgewell/sourcemap-codec": {
+      "version": "1.5.5",
+      "resolved": "https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.5.5.tgz",
+      "integrity": "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@jridgewell/trace-mapping": {
+      "version": "0.3.31",
+      "resolved": "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.31.tgz",
+      "integrity": "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/resolve-uri": "^3.1.0",
+        "@jridgewell/sourcemap-codec": "^1.4.14"
+      }
+    },
+    "node_modules/@napi-rs/lzma-linux-x64-gnu": {
+      "version": "1.5.1",
+      "resolved": "https://registry.npmjs.org/@napi-rs/lzma-linux-x64-gnu/-/lzma-linux-x64-gnu-1.5.1.tgz",
+      "integrity": "sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": "^22.20 || ^24.12 || >=25"
+      }
+    },
+    "node_modules/@remix-run/router": {
+      "version": "1.23.4",
+      "resolved": "https://registry.npmjs.org/@remix-run/router/-/router-1.23.4.tgz",
+      "integrity": "sha512-q7j5geK7xs3UJSdm9/iytUNclBnLmYx1EnSeCFXHPeutdqgIMeFeHtUZgS3EhlKxdBEAu8OwtJCwmLrEzpSs7Q==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=14.0.0"
+      }
+    },
+    "node_modules/@rolldown/pluginutils": {
+      "version": "1.0.0-beta.27",
+      "resolved": "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.0-beta.27.tgz",
+      "integrity": "sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@rollup/rollup-android-arm-eabi": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-android-arm-eabi/-/rollup-android-arm-eabi-4.62.5.tgz",
+      "integrity": "sha512-jfkGfTwhQpsiSckPF8r9bU3pn3vyd72NlWaO+TgEO6WPSDnUhXzrNYCHBMOYj0ACaUgjm6eERLF+XV9a6RstoA==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "android"
+      ]
+    },
+    "node_modules/@rollup/rollup-android-arm64": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-android-arm64/-/rollup-android-arm64-4.62.5.tgz",
+      "integrity": "sha512-oGVqyQlxnrz9/ty89oHpU857VUHEl5/Xu4R2lS+aivCTrNnSsbiENzTnNaBsjxH0CNWGPhzHArOLFwo+oKXveA==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "android"
+      ]
+    },
+    "node_modules/@rollup/rollup-darwin-arm64": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-darwin-arm64/-/rollup-darwin-arm64-4.62.5.tgz",
+      "integrity": "sha512-bW7B8xMEq8n99Q3ieEcPRGuphurdZAaFzQc9Efyyw3FL6DZO6pMy9xhdN+kBoD7Sy05xNXSr4OyPPnpkYriS/A==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ]
+    },
+    "node_modules/@rollup/rollup-darwin-x64": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-darwin-x64/-/rollup-darwin-x64-4.62.5.tgz",
+      "integrity": "sha512-YSwBS86QeHOGlrxJ1PSOIZSkzRL/JmKeunhc+lV6M1a6En8QuVCD/T/qIA0J4Gd2Y86RIOBYrLcOUtqGh9+/1w==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ]
+    },
+    "node_modules/@rollup/rollup-freebsd-arm64": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-freebsd-arm64/-/rollup-freebsd-arm64-4.62.5.tgz",
+      "integrity": "sha512-2fST8lILgl7cKbme/1KDdPCmbXbG+gqoV3bHp19L0ypX/3akYMBVdOunPleRCwonoLnXOZ/0F+Mt/v8POFmfcQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "freebsd"
+      ]
+    },
+    "node_modules/@rollup/rollup-freebsd-x64": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-freebsd-x64/-/rollup-freebsd-x64-4.62.5.tgz",
+      "integrity": "sha512-cpIxQCP9J+EVad0a6LO1kY3ZGODlk80VlI+2I96B8xMcdHZ4pLVhfQ49JFpYqjPF91FFkQWftf57YlDcTiw9yQ==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "freebsd"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-arm-gnueabihf": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm-gnueabihf/-/rollup-linux-arm-gnueabihf-4.62.5.tgz",
+      "integrity": "sha512-r9fGh3eFs3e/udWh5ZjXQtxiYK/xoFxQaYR/cELxac/Udkl5Th+IsFm0CX3Kl9hmUH/we7EoMpjJgeQNnE0+IA==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-arm-musleabihf": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm-musleabihf/-/rollup-linux-arm-musleabihf-4.62.5.tgz",
+      "integrity": "sha512-xdvFdp7OM6KLJviJT2g/YuRSUjnZgGHk4RNgwIbN7X6cPugOucV60DdHXWzsBVCUdrGb6qSXnJQrrAKMmQuj3Q==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-arm64-gnu": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm64-gnu/-/rollup-linux-arm64-gnu-4.62.5.tgz",
+      "integrity": "sha512-rRqILAndyzHzP7T9NFQrq+4HFWNhqkqkKur7eiBpfLmz01PO0JKx5Vchu3YllE4YXI/Ftgq/szrDWg5GJ0mI8g==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-arm64-musl": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm64-musl/-/rollup-linux-arm64-musl-4.62.5.tgz",
+      "integrity": "sha512-Gf4X3qVMucayUvux6aXXPgXovocSFUC0rrffDuPI/S2nHhNMhjcZxsrAFYCOF350PRreW1XwzFj3CT/3bKsWCw==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-loong64-gnu": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-loong64-gnu/-/rollup-linux-loong64-gnu-4.62.5.tgz",
+      "integrity": "sha512-+s5qA0TNM0qm8PK/a5gt/1Hpx+NV08uSuCncvhziIlQzT6AEV2fnUQo7eBtFTFO0nA9scauvoR2HusfXmQnO4w==",
+      "cpu": [
+        "loong64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-loong64-musl": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-loong64-musl/-/rollup-linux-loong64-musl-4.62.5.tgz",
+      "integrity": "sha512-ybb6QvWwWJCbBWqERpc8K3pYVGIrXlG8MEQ8IIuJY6Y9KdHQxoFoNyfkAOtKn1VHu3KuLidXvwrvGR1mEjeWCw==",
+      "cpu": [
+        "loong64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-ppc64-gnu": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-ppc64-gnu/-/rollup-linux-ppc64-gnu-4.62.5.tgz",
+      "integrity": "sha512-nZb1DtnOyhCmYvsC8A2CwOkopVg+IS1+fPUa7rMOAXtNw5+lLCLLPqd6XAiNrGtoQKsbvIBOwsHnBH/3wnb4HQ==",
+      "cpu": [
+        "ppc64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-ppc64-musl": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-ppc64-musl/-/rollup-linux-ppc64-musl-4.62.5.tgz",
+      "integrity": "sha512-yMbj63Sp89ryrXLWyz+sy+fYD2HpOnMCLGbe4Oa1smclFSUukdtD/BgdiHaAetJNb74URD8U4hM+qG5KVzMEkg==",
+      "cpu": [
+        "ppc64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-riscv64-gnu": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-riscv64-gnu/-/rollup-linux-riscv64-gnu-4.62.5.tgz",
+      "integrity": "sha512-mhoan3OJw2kYV/e1jtIdmvUZgyBFeA6zGWsOswmR0Tg19TQbowZuR+JMLID6spbbBN7Zee2ejrgmy3+FxGrIdA==",
+      "cpu": [
+        "riscv64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-riscv64-musl": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-riscv64-musl/-/rollup-linux-riscv64-musl-4.62.5.tgz",
+      "integrity": "sha512-5ZTLmjWbb1VZdjuyhe83K/8QO0/h11midQCBP+X5OYn32ra7eOBoM0ZqtaY4nkgNsYgmdVhMYPoyVPTjUpHf3w==",
+      "cpu": [
+        "riscv64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-s390x-gnu": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-s390x-gnu/-/rollup-linux-s390x-gnu-4.62.5.tgz",
+      "integrity": "sha512-m53kG+br6PGxOTmgBEM2DHSDs9RVjsyEbUwjJPJGTFm1grWOG8EKJggDCTb60unD4Tjby8fi7/m9XfkEWasVWg==",
+      "cpu": [
+        "s390x"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-x64-gnu": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-x64-gnu/-/rollup-linux-x64-gnu-4.62.5.tgz",
+      "integrity": "sha512-6RHPJR1g/uvdYU8uXBnfq3nlqyZCP82Fr6NHgfGoaIeSh0YEqnX/x6uA9MmJJbnSH7swqX4F+CkGdUF+6doiQA==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "libc": [
+        "glibc"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-linux-x64-musl": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.62.5.tgz",
+      "integrity": "sha512-xs+OXQtEXgpXT0DmA5+U3qnRZHdCST/5HRQxS8wSPZTUZN/EMWeHuSIod32LQklTBZBV9DyfncKBQ8n5V3eFdw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "libc": [
+        "musl"
+      ],
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ]
+    },
+    "node_modules/@rollup/rollup-openbsd-x64": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-openbsd-x64/-/rollup-openbsd-x64-4.62.5.tgz",
+      "integrity": "sha512-e7hD+sl3s+mcLQDZ8pbudBVsdG6r5yN4w3LqG2TJ8sQHDpblWj5lrJs/3m01Cvlxbt4x13zu5thLjgypgtkYzw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "openbsd"
+      ]
+    },
+    "node_modules/@rollup/rollup-openharmony-arm64": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-openharmony-arm64/-/rollup-openharmony-arm64-4.62.5.tgz",
+      "integrity": "sha512-GiyJaCf+WpMub/17aPcKk27QMl5W6f+KhdPTjlFOn5akH5Wa/DCM9Stdx5cDfmasyKB08MqpVQ1uJE2RkkpbXg==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "openharmony"
+      ]
+    },
+    "node_modules/@rollup/rollup-win32-arm64-msvc": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-arm64-msvc/-/rollup-win32-arm64-msvc-4.62.5.tgz",
+      "integrity": "sha512-+OQ8U2DdoEfXl8T4Fb18AjmEwbXMerKDKCL8yCPAYhKCEEKoul7rkbeGCBFCbAlaGaa7pmtRTpkAJM2LE/i5FA==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ]
+    },
+    "node_modules/@rollup/rollup-win32-ia32-msvc": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-ia32-msvc/-/rollup-win32-ia32-msvc-4.62.5.tgz",
+      "integrity": "sha512-KanvAZrPKbDBFwrgiU9yEVpQoox9QPV1WZOXX7HudJQY+eSlu82CtWxDU8WtuRRvtN5EGkLczkd6Y6DTcvm9wA==",
+      "cpu": [
+        "ia32"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ]
+    },
+    "node_modules/@rollup/rollup-win32-x64-gnu": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-x64-gnu/-/rollup-win32-x64-gnu-4.62.5.tgz",
+      "integrity": "sha512-1aC3UEWTtRl3RK3VpDJ/Tqk1XI4SLTmXIthAq6wRWo8XiSXJNd+VprJM4/1P4+i6HIaFEFlVi9sTTziniD2tOQ==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ]
+    },
+    "node_modules/@rollup/rollup-win32-x64-msvc": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.62.5.tgz",
+      "integrity": "sha512-/gDJaRs4gl0NPIwqCz+6PkpmhhjRAD2j6P4rSNHBzUkO3naEx2mIU0pRle1vUNRQ7mE/+8OOeXLTv/J56FKiQg==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ]
+    },
+    "node_modules/@types/babel__core": {
+      "version": "7.20.5",
+      "resolved": "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.20.5.tgz",
+      "integrity": "sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/parser": "^7.20.7",
+        "@babel/types": "^7.20.7",
+        "@types/babel__generator": "*",
+        "@types/babel__template": "*",
+        "@types/babel__traverse": "*"
+      }
+    },
+    "node_modules/@types/babel__generator": {
+      "version": "7.27.0",
+      "resolved": "https://registry.npmjs.org/@types/babel__generator/-/babel__generator-7.27.0.tgz",
+      "integrity": "sha512-ufFd2Xi92OAVPYsy+P4n7/U7e68fex0+Ee8gSG9KX7eo084CWiQ4sdxktvdl0bOPupXtVJPY19zk6EwWqUQ8lg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/types": "^7.0.0"
+      }
+    },
+    "node_modules/@types/babel__template": {
+      "version": "7.4.4",
+      "resolved": "https://registry.npmjs.org/@types/babel__template/-/babel__template-7.4.4.tgz",
+      "integrity": "sha512-h/NUaSyG5EyxBIp8YRxo4RMe2/qQgvyowRwVMzhYhBCONbW8PUsg4lkFMrhgZhUe5z3L3MiLDuvyJ/CaPa2A8A==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/parser": "^7.1.0",
+        "@babel/types": "^7.0.0"
+      }
+    },
+    "node_modules/@types/babel__traverse": {
+      "version": "7.28.0",
+      "resolved": "https://registry.npmjs.org/@types/babel__traverse/-/babel__traverse-7.28.0.tgz",
+      "integrity": "sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/types": "^7.28.2"
+      }
+    },
+    "node_modules/@types/estree": {
+      "version": "1.0.9",
+      "resolved": "https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz",
+      "integrity": "sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@types/prop-types": {
+      "version": "15.7.15",
+      "resolved": "https://registry.npmjs.org/@types/prop-types/-/prop-types-15.7.15.tgz",
+      "integrity": "sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/@types/react": {
+      "version": "18.3.31",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-18.3.31.tgz",
+      "integrity": "sha512-vfEqpXTvwT91yhmwdfouStN2hSKwTvyRs8qpLfADyrq/kxDw0hZM7Wk9Ug1FELj8hIby+S/+kQCSRFF32nv2Qw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@types/prop-types": "*",
+        "csstype": "^3.2.2"
+      }
+    },
+    "node_modules/@types/react-dom": {
+      "version": "18.3.7",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-18.3.7.tgz",
+      "integrity": "sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==",
+      "dev": true,
+      "license": "MIT",
+      "peerDependencies": {
+        "@types/react": "^18.0.0"
+      }
+    },
+    "node_modules/@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "integrity": "sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@babel/core": "^7.28.0",
+        "@babel/plugin-transform-react-jsx-self": "^7.27.1",
+        "@babel/plugin-transform-react-jsx-source": "^7.27.1",
+        "@rolldown/pluginutils": "1.0.0-beta.27",
+        "@types/babel__core": "^7.20.5",
+        "react-refresh": "^0.17.0"
+      },
+      "engines": {
+        "node": "^14.18.0 || >=16.0.0"
+      },
+      "peerDependencies": {
+        "vite": "^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
+      }
+    },
+    "node_modules/baseline-browser-mapping": {
+      "version": "2.11.18",
+      "resolved": "https://registry.npmjs.org/baseline-browser-mapping/-/baseline-browser-mapping-2.11.18.tgz",
+      "integrity": "sha512-1iEmLEYSiE1SeBoAfPo/Mnx3PzfzHUkDK61ASkCpuk3YXugYLH5DYK1SzqV55F8FMI6s0F+/tCP7Polz1QRjxw==",
+      "dev": true,
+      "license": "Apache-2.0",
+      "bin": {
+        "baseline-browser-mapping": "dist/cli.cjs"
+      },
+      "engines": {
+        "node": ">=6.0.0"
+      }
+    },
+    "node_modules/browserslist": {
+      "version": "4.28.8",
+      "resolved": "https://registry.npmjs.org/browserslist/-/browserslist-4.28.8.tgz",
+      "integrity": "sha512-V2NpofLblG64mfOtSgDhOJESZEGogzDMBv/q+W6oc4LXWP/q75eOXoOaaOu1EOadB9U4Bwx/e0yzbvwKH8zalA==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "opencollective",
+          "url": "https://opencollective.com/browserslist"
+        },
+        {
+          "type": "tidelift",
+          "url": "https://tidelift.com/funding/github/npm/browserslist"
+        },
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/ai"
+        }
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "baseline-browser-mapping": "^2.11.12",
+        "caniuse-lite": "^1.0.30001809",
+        "electron-to-chromium": "^1.5.402",
+        "node-releases": "^2.0.53",
+        "update-browserslist-db": "^1.3.0"
+      },
+      "bin": {
+        "browserslist": "cli.js"
+      },
+      "engines": {
+        "node": "^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7"
+      }
+    },
+    "node_modules/caniuse-lite": {
+      "version": "1.0.30001809",
+      "resolved": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001809.tgz",
+      "integrity": "sha512-xxWVywk6a6Arlk+hymeycyn/VgqEfLDxupvhH/xiY5SJ/18kmi9o6MiO320DCUzypORHLtvh0I4i04tUhCNHNQ==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "opencollective",
+          "url": "https://opencollective.com/browserslist"
+        },
+        {
+          "type": "tidelift",
+          "url": "https://tidelift.com/funding/github/npm/caniuse-lite"
+        },
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/ai"
+        }
+      ],
+      "license": "CC-BY-4.0"
+    },
+    "node_modules/canvas-confetti": {
+      "version": "1.9.4",
+      "resolved": "https://registry.npmjs.org/canvas-confetti/-/canvas-confetti-1.9.4.tgz",
+      "integrity": "sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw==",
+      "license": "ISC",
+      "funding": {
+        "type": "donate",
+        "url": "https://www.paypal.me/kirilvatev"
+      }
+    },
+    "node_modules/convert-source-map": {
+      "version": "2.0.0",
+      "resolved": "https://registry.npmjs.org/convert-source-map/-/convert-source-map-2.0.0.tgz",
+      "integrity": "sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/csstype": {
+      "version": "3.2.3",
+      "resolved": "https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz",
+      "integrity": "sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/debug": {
+      "version": "4.4.3",
+      "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz",
+      "integrity": "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "ms": "^2.1.3"
+      },
+      "engines": {
+        "node": ">=6.0"
+      },
+      "peerDependenciesMeta": {
+        "supports-color": {
+          "optional": true
+        }
+      }
+    },
+    "node_modules/electron-to-chromium": {
+      "version": "1.5.412",
+      "resolved": "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.5.412.tgz",
+      "integrity": "sha512-z4rMe3esBzlzovKHj4gxJnsCGZRK5l4baUvm+gCGJBPE+gsyUMKsuU9tnEUtI1dOebXz1ytAPGjvXhmQ7rIPwA==",
+      "dev": true,
+      "license": "ISC"
+    },
+    "node_modules/esbuild": {
+      "version": "0.21.5",
+      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.21.5.tgz",
+      "integrity": "sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw==",
+      "dev": true,
+      "hasInstallScript": true,
+      "license": "MIT",
+      "bin": {
+        "esbuild": "bin/esbuild"
+      },
+      "engines": {
+        "node": ">=12"
+      },
+      "optionalDependencies": {
+        "@esbuild/aix-ppc64": "0.21.5",
+        "@esbuild/android-arm": "0.21.5",
+        "@esbuild/android-arm64": "0.21.5",
+        "@esbuild/android-x64": "0.21.5",
+        "@esbuild/darwin-arm64": "0.21.5",
+        "@esbuild/darwin-x64": "0.21.5",
+        "@esbuild/freebsd-arm64": "0.21.5",
+        "@esbuild/freebsd-x64": "0.21.5",
+        "@esbuild/linux-arm": "0.21.5",
+        "@esbuild/linux-arm64": "0.21.5",
+        "@esbuild/linux-ia32": "0.21.5",
+        "@esbuild/linux-loong64": "0.21.5",
+        "@esbuild/linux-mips64el": "0.21.5",
+        "@esbuild/linux-ppc64": "0.21.5",
+        "@esbuild/linux-riscv64": "0.21.5",
+        "@esbuild/linux-s390x": "0.21.5",
+        "@esbuild/linux-x64": "0.21.5",
+        "@esbuild/netbsd-x64": "0.21.5",
+        "@esbuild/openbsd-x64": "0.21.5",
+        "@esbuild/sunos-x64": "0.21.5",
+        "@esbuild/win32-arm64": "0.21.5",
+        "@esbuild/win32-ia32": "0.21.5",
+        "@esbuild/win32-x64": "0.21.5"
+      }
+    },
+    "node_modules/escalade": {
+      "version": "3.2.0",
+      "resolved": "https://registry.npmjs.org/escalade/-/escalade-3.2.0.tgz",
+      "integrity": "sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6"
+      }
+    },
+    "node_modules/fsevents": {
+      "version": "2.3.3",
+      "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz",
+      "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
+      "dev": true,
+      "hasInstallScript": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "node": "^8.16.0 || ^10.6.0 || >=11.0.0"
+      }
+    },
+    "node_modules/gensync": {
+      "version": "1.0.0-beta.2",
+      "resolved": "https://registry.npmjs.org/gensync/-/gensync-1.0.0-beta.2.tgz",
+      "integrity": "sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6.9.0"
+      }
+    },
+    "node_modules/js-tokens": {
+      "version": "4.0.0",
+      "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz",
+      "integrity": "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==",
+      "license": "MIT"
+    },
+    "node_modules/jsesc": {
+      "version": "3.1.0",
+      "resolved": "https://registry.npmjs.org/jsesc/-/jsesc-3.1.0.tgz",
+      "integrity": "sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA==",
+      "dev": true,
+      "license": "MIT",
+      "bin": {
+        "jsesc": "bin/jsesc"
+      },
+      "engines": {
+        "node": ">=6"
+      }
+    },
+    "node_modules/json5": {
+      "version": "2.2.3",
+      "resolved": "https://registry.npmjs.org/json5/-/json5-2.2.3.tgz",
+      "integrity": "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==",
+      "dev": true,
+      "license": "MIT",
+      "bin": {
+        "json5": "lib/cli.js"
+      },
+      "engines": {
+        "node": ">=6"
+      }
+    },
+    "node_modules/loose-envify": {
+      "version": "1.4.0",
+      "resolved": "https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz",
+      "integrity": "sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==",
+      "license": "MIT",
+      "dependencies": {
+        "js-tokens": "^3.0.0 || ^4.0.0"
+      },
+      "bin": {
+        "loose-envify": "cli.js"
+      }
+    },
+    "node_modules/lru-cache": {
+      "version": "5.1.1",
+      "resolved": "https://registry.npmjs.org/lru-cache/-/lru-cache-5.1.1.tgz",
+      "integrity": "sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "yallist": "^3.0.2"
+      }
+    },
+    "node_modules/lucide-react": {
+      "version": "0.378.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-0.378.0.tgz",
+      "integrity": "sha512-u6EPU8juLUk9ytRcyapkWI18epAv3RU+6+TC23ivjR0e+glWKBobFeSgRwOIJihzktILQuy6E0E80P2jVTDR5g==",
+      "license": "ISC",
+      "peerDependencies": {
+        "react": "^16.5.1 || ^17.0.0 || ^18.0.0"
+      }
+    },
+    "node_modules/ms": {
+      "version": "2.1.3",
+      "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+      "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/nanoid": {
+      "version": "3.3.18",
+      "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.18.tgz",
+      "integrity": "sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/ai"
+        }
+      ],
+      "license": "MIT",
+      "bin": {
+        "nanoid": "bin/nanoid.cjs"
+      },
+      "engines": {
+        "node": "^10 || ^12 || ^13.7 || ^14 || >=15.0.1"
+      }
+    },
+    "node_modules/node-releases": {
+      "version": "2.0.53",
+      "resolved": "https://registry.npmjs.org/node-releases/-/node-releases-2.0.53.tgz",
+      "integrity": "sha512-D9UOmYG3UH1V+ENW56t5QXBwJw1YEY18ruVeus89Rw+SyIgjPkCO84bRzO3uNIYosJbNwiabWVn48o3uJLjxFQ==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=18"
+      }
+    },
+    "node_modules/picocolors": {
+      "version": "1.1.1",
+      "resolved": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz",
+      "integrity": "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==",
+      "dev": true,
+      "license": "ISC"
+    },
+    "node_modules/postcss": {
+      "version": "8.5.26",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.26.tgz",
+      "integrity": "sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "opencollective",
+          "url": "https://opencollective.com/postcss/"
+        },
+        {
+          "type": "tidelift",
+          "url": "https://tidelift.com/funding/github/npm/postcss"
+        },
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/ai"
+        }
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "nanoid": "^3.3.17",
+        "picocolors": "^1.1.1",
+        "source-map-js": "^1.2.1"
+      },
+      "engines": {
+        "node": "^10 || ^12 || >=14"
+      }
+    },
+    "node_modules/react": {
+      "version": "18.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-18.3.1.tgz",
+      "integrity": "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==",
+      "license": "MIT",
+      "dependencies": {
+        "loose-envify": "^1.1.0"
+      },
+      "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/react-dom": {
+      "version": "18.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-18.3.1.tgz",
+      "integrity": "sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==",
+      "license": "MIT",
+      "dependencies": {
+        "loose-envify": "^1.1.0",
+        "scheduler": "^0.23.2"
+      },
+      "peerDependencies": {
+        "react": "^18.3.1"
+      }
+    },
+    "node_modules/react-refresh": {
+      "version": "0.17.0",
+      "resolved": "https://registry.npmjs.org/react-refresh/-/react-refresh-0.17.0.tgz",
+      "integrity": "sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/react-router": {
+      "version": "6.30.6",
+      "resolved": "https://registry.npmjs.org/react-router/-/react-router-6.30.6.tgz",
+      "integrity": "sha512-5HfK7k5im7LTOB0EqCQmfvy4C13G92Ssj1VTmouTK3AJvyjKTnFuCV0vcMAD/JS+JC4DvDIBRrlAeJIFjh5VWg==",
+      "license": "MIT",
+      "dependencies": {
+        "@remix-run/router": "1.23.4"
+      },
+      "engines": {
+        "node": ">=14.0.0"
+      },
+      "peerDependencies": {
+        "react": ">=16.8"
+      }
+    },
+    "node_modules/react-router-dom": {
+      "version": "6.30.6",
+      "resolved": "https://registry.npmjs.org/react-router-dom/-/react-router-dom-6.30.6.tgz",
+      "integrity": "sha512-0RHKZz7wwffvkU+2MFVT2NnjK44ssLEV+m0CAJaS2Ksmorrwj7WxH00jO0SOCW26/tINUnJHToXblDs33I38YQ==",
+      "license": "MIT",
+      "dependencies": {
+        "@remix-run/router": "1.23.4",
+        "react-router": "6.30.6"
+      },
+      "engines": {
+        "node": ">=14.0.0"
+      },
+      "peerDependencies": {
+        "react": ">=16.8",
+        "react-dom": ">=16.8"
+      }
+    },
+    "node_modules/rollup": {
+      "version": "4.62.5",
+      "resolved": "https://registry.npmjs.org/rollup/-/rollup-4.62.5.tgz",
+      "integrity": "sha512-/tqMfgP7GPA3PHhCmuiS4vIjrSVhHLgY++i+dhbG462euyAj7FpM4D9uq1X3BgjlqRdpcOrYhcQtfiQLNc8tqw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@types/estree": "1.0.9"
+      },
+      "bin": {
+        "rollup": "dist/bin/rollup"
+      },
+      "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=8.0.0"
+      },
+      "optionalDependencies": {
+        "@napi-rs/lzma-linux-x64-gnu": "1.5.1",
+        "@rollup/rollup-android-arm-eabi": "4.62.5",
+        "@rollup/rollup-android-arm64": "4.62.5",
+        "@rollup/rollup-darwin-arm64": "4.62.5",
+        "@rollup/rollup-darwin-x64": "4.62.5",
+        "@rollup/rollup-freebsd-arm64": "4.62.5",
+        "@rollup/rollup-freebsd-x64": "4.62.5",
+        "@rollup/rollup-linux-arm-gnueabihf": "4.62.5",
+        "@rollup/rollup-linux-arm-musleabihf": "4.62.5",
+        "@rollup/rollup-linux-arm64-gnu": "4.62.5",
+        "@rollup/rollup-linux-arm64-musl": "4.62.5",
+        "@rollup/rollup-linux-loong64-gnu": "4.62.5",
+        "@rollup/rollup-linux-loong64-musl": "4.62.5",
+        "@rollup/rollup-linux-ppc64-gnu": "4.62.5",
+        "@rollup/rollup-linux-ppc64-musl": "4.62.5",
+        "@rollup/rollup-linux-riscv64-gnu": "4.62.5",
+        "@rollup/rollup-linux-riscv64-musl": "4.62.5",
+        "@rollup/rollup-linux-s390x-gnu": "4.62.5",
+        "@rollup/rollup-linux-x64-gnu": "4.62.5",
+        "@rollup/rollup-linux-x64-musl": "4.62.5",
+        "@rollup/rollup-openbsd-x64": "4.62.5",
+        "@rollup/rollup-openharmony-arm64": "4.62.5",
+        "@rollup/rollup-win32-arm64-msvc": "4.62.5",
+        "@rollup/rollup-win32-ia32-msvc": "4.62.5",
+        "@rollup/rollup-win32-x64-gnu": "4.62.5",
+        "@rollup/rollup-win32-x64-msvc": "4.62.5",
+        "fsevents": "~2.3.2"
+      }
+    },
+    "node_modules/scheduler": {
+      "version": "0.23.2",
+      "resolved": "https://registry.npmjs.org/scheduler/-/scheduler-0.23.2.tgz",
+      "integrity": "sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==",
+      "license": "MIT",
+      "dependencies": {
+        "loose-envify": "^1.1.0"
+      }
+    },
+    "node_modules/semver": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/semver/-/semver-6.3.1.tgz",
+      "integrity": "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==",
+      "dev": true,
+      "license": "ISC",
+      "bin": {
+        "semver": "bin/semver.js"
+      }
+    },
+    "node_modules/source-map-js": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz",
+      "integrity": "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==",
+      "dev": true,
+      "license": "BSD-3-Clause",
+      "engines": {
+        "node": ">=0.10.0"
+      }
+    },
+    "node_modules/update-browserslist-db": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/update-browserslist-db/-/update-browserslist-db-1.3.1.tgz",
+      "integrity": "sha512-ZZ61DsRsOnakl74HAmp3oSN4aXUmEWXf+i/yv0h7tIBfICc3VdrFErQKUUKPgu3AMsTUMbcongALEN4l6GSUrQ==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "opencollective",
+          "url": "https://opencollective.com/browserslist"
+        },
+        {
+          "type": "tidelift",
+          "url": "https://tidelift.com/funding/github/npm/browserslist"
+        },
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/ai"
+        }
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "escalade": "^3.2.0",
+        "picocolors": "^1.1.1"
+      },
+      "bin": {
+        "update-browserslist-db": "cli.js"
+      },
+      "peerDependencies": {
+        "browserslist": ">= 4.21.0"
+      }
+    },
+    "node_modules/vite": {
+      "version": "5.4.21",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-5.4.21.tgz",
+      "integrity": "sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "esbuild": "^0.21.3",
+        "postcss": "^8.4.43",
+        "rollup": "^4.20.0"
+      },
+      "bin": {
+        "vite": "bin/vite.js"
+      },
+      "engines": {
+        "node": "^18.0.0 || >=20.0.0"
+      },
+      "funding": {
+        "url": "https://github.com/vitejs/vite?sponsor=1"
+      },
+      "optionalDependencies": {
+        "fsevents": "~2.3.3"
+      },
+      "peerDependencies": {
+        "@types/node": "^18.0.0 || >=20.0.0",
+        "less": "*",
+        "lightningcss": "^1.21.0",
+        "sass": "*",
+        "sass-embedded": "*",
+        "stylus": "*",
+        "sugarss": "*",
+        "terser": "^5.4.0"
+      },
+      "peerDependenciesMeta": {
+        "@types/node": {
+          "optional": true
+        },
+        "less": {
+          "optional": true
+        },
+        "lightningcss": {
+          "optional": true
+        },
+        "sass": {
+          "optional": true
+        },
+        "sass-embedded": {
+          "optional": true
+        },
+        "stylus": {
+          "optional": true
+        },
+        "sugarss": {
+          "optional": true
+        },
+        "terser": {
+          "optional": true
+        }
+      }
+    },
+    "node_modules/yallist": {
+      "version": "3.1.1",
+      "resolved": "https://registry.npmjs.org/yallist/-/yallist-3.1.1.tgz",
+      "integrity": "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==",
+      "dev": true,
+      "license": "ISC"
+    }
+  }
+}
+
+
+--------------------------------------------------------------------------------
+FILE: /package.json
+--------------------------------------------------------------------------------
+{
+  "name": "qpm-website-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.4",
+    "lucide-react": "^0.378.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.2.11"
+  }
+}
+
+
+--------------------------------------------------------------------------------
+FILE: /README.md
+--------------------------------------------------------------------------------
+# QPM-Website-Frontend
+
+Created by a Commander on QuantumLogics Community.
+
+
+--------------------------------------------------------------------------------
+FILE: /vite.config.js
+--------------------------------------------------------------------------------
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  }
+})
+
+
+================================================================================
+END OF FOLDER: QPM-Website-Frontend
+================================================================================

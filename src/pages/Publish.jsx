@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Upload, HardDrive, CheckCircle2, AlertTriangle, FileArchive, ArrowRight, Box } from "lucide-react";
+import { Upload, HardDrive, CheckCircle2, AlertTriangle, FileArchive, ArrowRight, Box, Github } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useAuth } from "../context/AuthContext";
 
 export default function Publish() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
+
+  // "file" = upload a .tgz directly (existing flow)
+  // "github" = pull the package straight from a GitHub repo
+  const [mode, setMode] = useState("file");
 
   const [name, setName] = useState("");
   const [version, setVersion] = useState("1.0.0");
@@ -16,9 +20,14 @@ export default function Publish() {
   const [repository, setRepository] = useState("");
   const [readme, setReadme] = useState("");
   const [dependencies, setDependencies] = useState("{}");
-  
+
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState("");
+
+  // GitHub-import-specific fields
+  const [repoUrl, setRepoUrl] = useState("");
+  const [branch, setBranch] = useState("main");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -28,12 +37,55 @@ export default function Publish() {
     if (selectedFile) {
       setFile(selectedFile);
       setFileName(selectedFile.name);
-      // Auto fill name if empty
       if (!name) {
         const cleanName = selectedFile.name.replace(/\.tgz$|\.tar\.gz$/, "").replace(/-\d+\.\d+\.\d+$/, "");
         setName(cleanName);
       }
     }
+  };
+
+  const handlePublishFromFile = async (headers) => {
+    let fileBase64 = "";
+    if (file) {
+      fileBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (err) => reject(err);
+      });
+    }
+
+    const payload = {
+      name,
+      version,
+      description,
+      keywords,
+      license,
+      repository,
+      readme: readme || `# ${name}\n\n${description}`,
+      dependencies,
+      fileBase64,
+    };
+
+    return fetch("/api/registry/publish", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+  };
+
+  const handlePublishFromGithub = async (headers) => {
+    if (!repoUrl) {
+      throw new Error("A GitHub repo URL is required to import a package.");
+    }
+
+    const payload = { repoUrl, branch, version, dependencies };
+
+    return fetch("/api/registry/publish-from-github", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
   };
 
   const handlePublish = async (e) => {
@@ -43,19 +95,11 @@ export default function Publish() {
     setLoading(true);
 
     try {
-      if (!name || !version) {
-        throw new Error("Package name and version are required.");
+      if (!version) {
+        throw new Error("Version is required.");
       }
-
-      // Convert file to Base64 if file uploaded
-      let fileBase64 = "";
-      if (file) {
-        fileBase64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = (err) => reject(err);
-        });
+      if (mode === "file" && !name) {
+        throw new Error("Package name is required.");
       }
 
       const headers = { "Content-Type": "application/json" };
@@ -63,40 +107,23 @@ export default function Publish() {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const payload = {
-        name,
-        version,
-        description,
-        keywords,
-        license,
-        repository,
-        readme: readme || `# ${name}\n\n${description}`,
-        dependencies,
-        fileBase64
-      };
-
-      const res = await fetch("/api/registry/publish", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload)
-      });
+      const res =
+        mode === "github"
+          ? await handlePublishFromGithub(headers)
+          : await handlePublishFromFile(headers);
 
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Failed to publish package.");
       }
 
-      setSuccess(`Package ${name}@${version} published and stored in Google Drive!`);
-      
-      // Trigger celebrate confetti
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
+      const publishedName = data.package?.name || name;
+      setSuccess(`Package ${publishedName}@${version} published and stored in Google Drive!`);
+
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
       setTimeout(() => {
-        navigate(`/package/${name}`);
+        navigate(`/package/${publishedName}`);
       }, 2000);
     } catch (err) {
       setError(err.message);
@@ -115,7 +142,7 @@ export default function Publish() {
           </div>
           <h1 style={{ fontSize: "2.4rem", marginTop: "12px" }}>Publish a Quantum Package</h1>
           <p style={{ color: "var(--text-muted)", fontSize: "1.05rem" }}>
-            Upload package archive (.tgz) to store on Google Drive & serve to QPM CLI
+            Upload a .tgz, or import a package straight from GitHub.
           </p>
         </div>
 
@@ -134,127 +161,198 @@ export default function Publish() {
         {error && <div style={styles.errorAlert}>{error}</div>}
         {success && <div style={styles.successAlert}>{success}</div>}
 
+        {/* Mode toggle */}
+        <div style={styles.modeToggle}>
+          <button
+            type="button"
+            onClick={() => setMode("file")}
+            style={mode === "file" ? styles.modeBtnActive : styles.modeBtn}
+          >
+            <FileArchive size={16} />
+            <span>Upload File</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("github")}
+            style={mode === "github" ? styles.modeBtnActive : styles.modeBtn}
+          >
+            <Github size={16} />
+            <span>Import from GitHub</span>
+          </button>
+        </div>
+
         <form onSubmit={handlePublish} className="glass-card" style={styles.formCard}>
-          {/* File Upload Zone */}
-          <div>
-            <label style={styles.label}>Package Tarball File (.tgz)</label>
-            <div style={styles.dropZone}>
-              <input
-                type="file"
-                accept=".tgz,.gz,.tar.gz"
-                onChange={handleFileChange}
-                style={styles.fileInput}
-              />
-              <FileArchive size={36} color="var(--accent-cyan)" style={{ marginBottom: "8px" }} />
-              {fileName ? (
-                <div>
-                  <span style={{ fontWeight: "700", color: "#fff" }}>{fileName}</span>
-                  <p style={{ fontSize: "0.8rem", color: "var(--accent-emerald)" }}>File ready for Google Drive upload</p>
+          {mode === "file" ? (
+            <>
+              {/* File Upload Zone */}
+              <div>
+                <label style={styles.label}>Package Tarball File (.tgz)</label>
+                <div style={styles.dropZone}>
+                  <input
+                    type="file"
+                    accept=".tgz,.gz,.tar.gz"
+                    onChange={handleFileChange}
+                    style={styles.fileInput}
+                  />
+                  <FileArchive size={36} color="var(--accent-cyan)" style={{ marginBottom: "8px" }} />
+                  {fileName ? (
+                    <div>
+                      <span style={{ fontWeight: "700", color: "#fff" }}>{fileName}</span>
+                      <p style={{ fontSize: "0.8rem", color: "var(--accent-emerald)" }}>File ready for Google Drive upload</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <span style={{ fontWeight: "600" }}>Click to select `.tgz` archive or drag file here</span>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginTop: "4px" }}>
+                        Optional: If omitted, an empty package container will be generated.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              ) : (
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px" }}>
                 <div>
-                  <span style={{ fontWeight: "600" }}>Click to select `.tgz` archive or drag file here</span>
-                  <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", marginTop: "4px" }}>
-                    Optional: If omitted, an empty package container will be generated.
-                  </p>
+                  <label style={styles.label}>Package Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. quantum-utils"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="input-field"
+                  />
                 </div>
-              )}
-            </div>
-          </div>
+                <div>
+                  <label style={styles.label}>Version *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="1.0.0"
+                    value={version}
+                    onChange={(e) => setVersion(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+              </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "16px" }}>
-            <div>
-              <label style={styles.label}>Package Name *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. quantum-utils"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label style={styles.label}>Version *</label>
-              <input
-                type="text"
-                required
-                placeholder="1.0.0"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-                className="input-field"
-              />
-            </div>
-          </div>
+              <div>
+                <label style={styles.label}>Description</label>
+                <input
+                  type="text"
+                  placeholder="High performance utility functions for Quantum Language"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="input-field"
+                />
+              </div>
 
-          <div>
-            <label style={styles.label}>Description</label>
-            <input
-              type="text"
-              placeholder="High performance utility functions for Quantum Language"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input-field"
-            />
-          </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={styles.label}>Keywords (comma separated)</label>
+                  <input
+                    type="text"
+                    placeholder="quantum, math, matrix"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label style={styles.label}>License</label>
+                  <input
+                    type="text"
+                    placeholder="MIT"
+                    value={license}
+                    onChange={(e) => setLicense(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+              </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-            <div>
-              <label style={styles.label}>Keywords (comma separated)</label>
-              <input
-                type="text"
-                placeholder="quantum, math, matrix"
-                value={keywords}
-                onChange={(e) => setKeywords(e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label style={styles.label}>License</label>
-              <input
-                type="text"
-                placeholder="MIT"
-                value={license}
-                onChange={(e) => setLicense(e.target.value)}
-                className="input-field"
-              />
-            </div>
-          </div>
+              <div>
+                <label style={styles.label}>GitHub Repository URL (Optional, metadata only)</label>
+                <input
+                  type="url"
+                  placeholder="https://github.com/username/repository"
+                  value={repository}
+                  onChange={(e) => setRepository(e.target.value)}
+                  className="input-field"
+                />
+              </div>
 
-          <div>
-            <label style={styles.label}>GitHub Repository URL (Optional)</label>
-            <input
-              type="url"
-              placeholder="https://github.com/username/repository"
-              value={repository}
-              onChange={(e) => setRepository(e.target.value)}
-              className="input-field"
-            />
-          </div>
+              <div>
+                <label style={styles.label}>README Markdown Content</label>
+                <textarea
+                  rows={6}
+                  placeholder="# My Package&#10;&#10;Installation: `qpm install package-name`"
+                  value={readme}
+                  onChange={(e) => setReadme(e.target.value)}
+                  className="input-field"
+                  style={{ fontFamily: "var(--font-mono)", fontSize: "0.9rem" }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* GitHub import fields */}
+              <div style={styles.githubBanner}>
+                <Github size={20} color="var(--accent-cyan)" />
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>
+                  The repo's <code>qpm.json</code> supplies the name/description/tags, and its{" "}
+                  <code>README.md</code> becomes the package's article automatically.
+                </p>
+              </div>
 
-          <div>
-            <label style={styles.label}>Dependencies JSON (Optional)</label>
-            <textarea
-              rows={3}
-              placeholder='{ "quantum-core": "^1.0.0" }'
-              value={dependencies}
-              onChange={(e) => setDependencies(e.target.value)}
-              className="input-field"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}
-            />
-          </div>
+              <div>
+                <label style={styles.label}>GitHub Repository URL *</label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://github.com/username/repository"
+                  value={repoUrl}
+                  onChange={(e) => setRepoUrl(e.target.value)}
+                  className="input-field"
+                />
+              </div>
 
-          <div>
-            <label style={styles.label}>README Markdown Content</label>
-            <textarea
-              rows={6}
-              placeholder="# My Package&#10;&#10;Installation: `qpm install package-name`"
-              value={readme}
-              onChange={(e) => setReadme(e.target.value)}
-              className="input-field"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "0.9rem" }}
-            />
-          </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={styles.label}>Branch</label>
+                  <input
+                    type="text"
+                    placeholder="main"
+                    value={branch}
+                    onChange={(e) => setBranch(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label style={styles.label}>Version *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="1.0.0"
+                    value={version}
+                    onChange={(e) => setVersion(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={styles.label}>Dependencies JSON (Optional)</label>
+                <textarea
+                  rows={3}
+                  placeholder='{ "quantum-core": "^1.0.0" }'
+                  value={dependencies}
+                  onChange={(e) => setDependencies(e.target.value)}
+                  className="input-field"
+                  style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}
+                />
+              </div>
+            </>
+          )}
 
           <button
             type="submit"
@@ -263,11 +361,11 @@ export default function Publish() {
             style={{ width: "100%", height: "50px", fontSize: "1.05rem", marginTop: "12px" }}
           >
             {loading ? (
-              "Uploading Tarball to Google Drive & MongoDB..."
+              mode === "github" ? "Importing from GitHub..." : "Uploading Tarball to Google Drive & MongoDB..."
             ) : (
               <>
-                <Upload size={20} />
-                <span>Publish Package to QPM</span>
+                {mode === "github" ? <Github size={20} /> : <Upload size={20} />}
+                <span>{mode === "github" ? "Import & Publish from GitHub" : "Publish Package to QPM"}</span>
               </>
             )}
           </button>
@@ -319,6 +417,54 @@ const styles = {
     marginBottom: "24px",
     textAlign: "center",
     fontWeight: "600"
+  },
+  modeToggle: {
+    display: "flex",
+    gap: "8px",
+    marginBottom: "20px",
+    background: "rgba(15, 23, 42, 0.5)",
+    padding: "6px",
+    borderRadius: "var(--radius-md)",
+    border: "1px solid var(--border-light)"
+  },
+  modeBtn: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    padding: "10px",
+    borderRadius: "var(--radius-sm, 6px)",
+    border: "none",
+    background: "transparent",
+    color: "var(--text-muted)",
+    fontWeight: "600",
+    fontSize: "0.9rem",
+    cursor: "pointer"
+  },
+  modeBtnActive: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    padding: "10px",
+    borderRadius: "var(--radius-sm, 6px)",
+    border: "none",
+    background: "var(--accent-cyan)",
+    color: "#06222A",
+    fontWeight: "700",
+    fontSize: "0.9rem",
+    cursor: "pointer"
+  },
+  githubBanner: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    background: "rgba(6, 182, 212, 0.08)",
+    border: "1px solid rgba(6, 182, 212, 0.25)",
+    borderRadius: "var(--radius-md)",
+    padding: "12px 16px"
   },
   formCard: {
     padding: "36px",
